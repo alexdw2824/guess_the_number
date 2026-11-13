@@ -1,0 +1,1388 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101827">
+  <title>Devine mon nombre</title>
+  <style>
+    :root { color-scheme: dark; --bg:#101827; --glow:#263454; --card:#192438; --surface:#111b2b; --text:#f4f7fb; --muted:#aab6c8; --accent:#8b9cff; --line:#34425a; --admin-bg:#172b50; --admin-border:#527bea; --admin-input:#0d1729; --terminal-bg:#0b1728; --terminal-border:#3b6da8; --terminal-text:#9ee4ff; --terminal-hint:#7799bd; --admin-pill-bg:#123b5b; --admin-pill-border:#1e9ed6; --admin-pill-text:#8ce2ff; }
+    body[data-theme="green"] { --bg:#0c1b14; --glow:#1d5137; --card:rgba(19,43,31,.97); --surface:#10261b; --text:#f1fff5; --muted:#b4d1bd; --accent:#70e6a1; --line:#376348; --admin-bg:#153a28; --admin-border:#4d9a6c; --admin-input:#0b1d13; --terminal-bg:#08170e; --terminal-border:#4b9b69; --terminal-text:#a7f5bd; --terminal-hint:#7eaf8c; --admin-pill-bg:#16452b; --admin-pill-border:#57b87a; --admin-pill-text:#a7f5bd; }
+    body[data-theme="red"] { --bg:#201012; --glow:#57232a; --card:rgba(49,25,30,.97); --surface:#28171b; --text:#fff4f4; --muted:#dbb7bb; --accent:#ff858c; --line:#704148; --admin-bg:#48242a; --admin-border:#a3505b; --admin-input:#241114; --terminal-bg:#1d0d11; --terminal-border:#a3505b; --terminal-text:#ffb2b7; --terminal-hint:#c8888e; --admin-pill-bg:#53262e; --admin-pill-border:#c86773; --admin-pill-text:#ffc0c4; }
+    * { box-sizing:border-box }
+    body { margin:0; min-height:100vh; display:grid; place-items:center; padding:24px; background:radial-gradient(ellipse at top,var(--glow),var(--bg) 65%); color:var(--text); font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif }
+    main { width:min(100%,520px); padding:clamp(24px,6vw,40px); border:1px solid var(--line); border-radius:24px; background:var(--card); box-shadow:0 24px 70px #0006 }
+    h1 { margin:0 0 8px; font-size:clamp(28px,7vw,38px); letter-spacing:-.03em }
+    .intro { margin:0 0 26px; color:var(--muted) }
+    label { display:block; margin:18px 0 8px; font-weight:650 }
+    button { width:100%; min-height:50px; border-radius:12px; font:inherit }
+    .levels { display:grid; gap:10px; margin:0; padding:0; border:0 }
+    .level-option { display:flex; align-items:center; gap:10px; margin:0; padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:var(--surface); cursor:pointer }
+    .level-option input { accent-color:var(--accent) }
+    .level-option em { margin-left:auto; color:var(--muted); font-weight:500 }
+    .level-option .coming-soon { margin-left:0 }
+    .admin-fields { display:grid; gap:10px }
+    .admin-fields label { margin:0; font-size:14px }
+    .admin-fields input { display:block; width:100%; min-height:42px; margin-top:4px; padding:8px 10px; border:1px solid var(--line); border-radius:9px; color:var(--text); background:var(--surface); font:inherit }
+    .admin-help { margin:0 0 12px; color:var(--muted); font-size:13px }
+    .challenge-toggle { display:flex; align-items:center; gap:10px; margin:16px 0 0; padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:var(--surface); color:var(--text); font-weight:600; cursor:pointer }
+    .challenge-toggle input { width:18px; height:18px; accent-color:var(--accent) }
+    .timer-choice { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:9px 0 0; padding:0 4px; color:var(--muted); font-size:13px }
+    .timer-choice select { min-height:38px; padding:5px 10px; border:1px solid var(--line); border-radius:9px; color:var(--text); background:var(--surface); font:inherit }
+    .timer-choice select:disabled { opacity:.5 }
+    .daily-start { border:1px solid var(--terminal-border); color:var(--terminal-text); background:linear-gradient(140deg,var(--terminal-bg),var(--admin-bg)); font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace }
+    .admin-unlock { position:fixed; z-index:5; top:16px; left:16px; width:min(300px,calc(100vw - 92px)); font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace }
+    .admin-unlock input { width:100%; height:46px; padding:0 12px; border:1px solid var(--terminal-border); border-radius:8px; color:var(--terminal-text); background:var(--terminal-bg); font:inherit; box-shadow:0 5px 18px #0004 }
+    .admin-unlock input::placeholder { color:var(--terminal-hint) }
+    .admin-unlock input:focus { outline:2px solid var(--accent); outline-offset:2px }
+    #unlock-error { position:absolute; top:50px; left:0; width:min(340px,calc(100vw - 24px)); margin:0; padding:8px 10px; border:1px solid var(--terminal-border); border-radius:8px; color:#ff9a9a; background:var(--terminal-bg); font-size:13px; overflow-wrap:anywhere }
+    #unlock-error:empty { display:none }
+    #unlock-error.success { color:#72e6bd }
+    .admin-app { position:fixed; z-index:5; top:16px; right:16px; width:52px; height:52px; min-height:0; margin:0; padding:0; border-radius:15px; color:#101827; background:linear-gradient(145deg,var(--accent),var(--admin-bg)); border:1px solid var(--accent); box-shadow:0 0 0 3px var(--line),0 8px 22px #0007; font-size:17px; font-weight:850; letter-spacing:.02em }
+    .admin-app[aria-expanded="true"] { background:var(--accent); box-shadow:0 0 0 4px var(--line),0 0 24px var(--accent) }
+    .admin-unlock input, .admin-console { font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace }
+    .admin-console input, .admin-console button { font-family:inherit }
+    .admin-console { border:1px solid var(--admin-border); background:linear-gradient(155deg,var(--admin-bg),var(--surface) 70%); box-shadow:0 0 0 3px var(--line),0 16px 42px #0008,inset 0 1px #ffffff12 }
+    body.admin-open::before { content:""; position:fixed; inset:0; z-index:19; background:rgba(5,10,20,.96); backdrop-filter:blur(8px) }
+    .admin-console { position:fixed; z-index:20; top:50%; left:50%; transform:translate(-50%,-50%); width:min(520px,calc(100vw - 32px)); max-height:calc(100vh - 32px); overflow-y:auto; margin:0 }
+    .admin-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px }
+    .admin-console .admin-header h2 { margin:0; color:var(--text); font-size:18px; letter-spacing:.02em }
+    .admin-console .admin-header button { width:auto; min-height:36px; margin:0; padding:0 12px; border-radius:9px }
+    .admin-console .admin-help { color:var(--muted) }
+    .admin-console .admin-fields input { border-color:var(--admin-border); background:var(--admin-input) }
+    .admin-console .admin-fields input:focus { outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent) }
+    .admin-console button { color:#101827; background:var(--accent) }
+    .admin-command-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:20px; padding:14px; border:1px solid var(--admin-border); border-radius:12px; background:var(--admin-input) }
+    .admin-command-list h3,.admin-command-list p { grid-column:1/-1; margin:0 }
+    .admin-command-list h3 { font-size:15px }
+    .admin-command-list p { color:var(--muted); font-size:12px }
+    .admin-command-list button { min-width:0; min-height:40px; margin:0; padding:6px 9px; border:1px solid var(--admin-border); border-radius:8px; color:var(--admin-pill-text); background:var(--admin-pill-bg); font:13px ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; overflow-wrap:anywhere }
+    .admin-command-list button:hover { filter:brightness(1.2) }
+    #admin-command-result { grid-column:1/-1; min-height:42px; padding:9px 10px; border:1px solid var(--admin-border); border-radius:8px; color:var(--terminal-text); background:var(--terminal-bg); font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; overflow-wrap:anywhere; white-space:pre-wrap }
+    @media (max-width:380px) { .admin-command-list { grid-template-columns:1fr } }
+    .admin-console button.secondary { color:var(--text); background:var(--surface); border-color:var(--line) }
+    .admin-mode { display:inline-block; margin:0 0 12px; padding:3px 9px; border:1px solid var(--admin-pill-border); border-radius:999px; color:var(--admin-pill-text); background:var(--admin-pill-bg); font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase }
+    button { margin-top:14px; border:0; color:#111827; background:var(--accent); font-weight:750; cursor:pointer }
+    button:hover { filter:brightness(1.08) } button:focus-visible,.level-option:focus-within { outline:3px solid #fff; outline-offset:3px }
+    button.secondary { color:var(--text); background:#2b3952; border:1px solid var(--line) }
+    .panel { margin-top:24px; padding:20px; border:1px solid var(--line); border-radius:16px; background:var(--surface) }
+    .guess { margin:0 0 4px; color:var(--muted) }
+    .number { margin:0 0 16px; text-align:center; font-size:72px; line-height:1.1; font-weight:800; letter-spacing:-.05em }
+    .actions { display:grid; grid-template-columns:1fr 1fr; gap:10px }
+    .actions button { margin:0 }
+    .correct { grid-column:1/-1 }
+    .leave-btn { background:#d52f43; border:1px solid #ff7482; color:#fff; opacity:1; }
+    #message { min-height:48px; margin:16px 0 0; color:var(--muted); text-align:center }
+    .keyboard-shortcuts { margin:8px 0 0; color:var(--muted); font-size:11px; text-align:center }
+    .range-meter { margin:14px 0 18px }
+    .range-meter-label { display:flex; justify-content:space-between; margin-bottom:6px; color:var(--muted); font-size:12px }
+    .range-meter-track { height:7px; overflow:hidden; border-radius:99px; background:var(--bg) }
+    .range-meter-track span { display:block; width:100%; height:100%; border-radius:inherit; background:linear-gradient(90deg,var(--accent),#80e8ff); transition:width .25s ease }
+    .timer-badge { display:flex; justify-content:space-between; align-items:center; margin:0 0 14px; padding:9px 12px; border:1px solid var(--accent); border-radius:10px; color:var(--text); background:var(--card); font:700 14px ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace }
+    .timer-badge strong { color:var(--accent); font-size:20px }
+    .timer-badge.urgent { color:#ff858c; border-color:#ff858c; animation:timer-pulse .55s ease-in-out infinite alternate }
+    @keyframes timer-pulse { to { box-shadow:0 0 18px #ff465966 } }
+    .hidden { display:none }
+    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0 }
+    .settings-gear { position:fixed; z-index:10; right:18px; bottom:18px; width:54px; height:54px; min-height:0; margin:0; border:1px solid #91a0ff; border-radius:17px; background:var(--accent); color:#101827; font-size:25px; box-shadow:0 8px 24px #0007 }
+    body[data-theme="green"] .settings-gear { border-color:#a2f3bf }
+    body[data-theme="red"] .settings-gear { border-color:#ffc0c3 }
+    .settings-backdrop { position:fixed; z-index:39; inset:0; background:#050a14eF; backdrop-filter:blur(8px) }
+    .settings-dialog { position:fixed; z-index:40; top:50%; left:50%; transform:translate(-50%,-50%); width:min(560px,calc(100vw - 28px)); max-height:calc(100vh - 28px); overflow:auto; padding:22px; border:1px solid var(--line); border-radius:20px; background:var(--card); box-shadow:0 24px 80px #000b }
+    .settings-header { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:16px }
+    .settings-header h2 { margin:0; font-size:24px }
+    .settings-header button { width:auto; min-height:40px; margin:0; padding:0 14px }
+    .settings-header button.secondary { color:var(--text); background:var(--surface); border-color:var(--line) }
+    .settings-group { margin:16px 0 0; padding:14px; border:1px solid var(--line); border-radius:14px; background:var(--surface) }
+    .settings-group h3 { margin:0 0 12px; font-size:15px }
+    .setting-row { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:10px 0 }
+    .setting-row label { margin:0; font-weight:500 }
+    .setting-row input[type="range"] { width:min(55%,230px); accent-color:var(--accent) }
+    .setting-row input[type="checkbox"] { width:20px; height:20px; accent-color:var(--accent) }
+    .language-options,.theme-options { display:flex; flex-wrap:wrap; gap:8px }
+    .language-options button,.theme-options button { flex:1; width:auto; min-height:44px; margin:0; padding:8px 10px; border:1px solid var(--line); border-radius:10px; color:var(--text); background:var(--surface); font-size:14px }
+    .language-options button[aria-pressed="true"],.theme-options button[aria-pressed="true"] { outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent) }
+    .theme-options button[data-theme-choice="green"] { background:#173b29 }
+    .theme-options button[data-theme-choice="red"] { background:#46242a }
+    .theme-options button[data-theme-choice="blue"] { background:#263454 }
+    .settings-note { color:var(--muted); font-size:12px; margin:10px 0 0 }
+    .game-menu-backdrop { position:fixed; z-index:89; inset:0; background:#050a14eF; backdrop-filter:blur(10px) }
+    .game-menu { position:fixed; z-index:90; top:50%; left:50%; transform:translate(-50%,-50%); width:min(680px,calc(100vw - 28px)); max-height:calc(100vh - 28px); overflow:auto; padding:22px; border:1px solid var(--line); border-radius:22px; color:var(--text); background:var(--card); box-shadow:0 24px 80px #000c }
+    .game-menu-header { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:16px }
+    .game-menu-kicker { display:block; color:var(--accent); font:700 11px ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; letter-spacing:.12em; text-transform:uppercase }
+    .game-menu-header h2 { margin:3px 0 0; font-size:25px }
+    .game-menu-header button { width:auto; min-height:40px; margin:0; padding:0 13px }
+    .game-menu-tabs { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 18px }
+    .game-menu-tabs button { flex:1; min-width:110px; min-height:40px; margin:0; padding:6px 10px; border:1px solid var(--line); border-radius:10px; color:var(--text); background:var(--surface); font-size:13px }
+    .game-menu-tabs button[aria-selected="true"] { color:#111827; background:var(--accent); border-color:var(--accent) }
+    .menu-stat-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px }
+    .menu-stat-card { padding:14px; border:1px solid var(--line); border-radius:13px; background:var(--surface) }
+    .menu-stat-card span { display:block; color:var(--muted); font-size:12px }
+    .menu-stat-card strong { display:block; margin-top:5px; font-size:25px }
+    .daily-challenge-card { margin-top:14px; padding:15px; border:1px solid var(--terminal-border); border-radius:14px; color:var(--terminal-text); background:linear-gradient(145deg,var(--terminal-bg),var(--surface)); font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace }
+    .daily-challenge-card h3 { margin:0 0 6px; font-size:15px }
+    .daily-challenge-card p { margin:0; color:var(--muted); font-size:13px }
+    .daily-challenge-card button { margin:12px 0 0; min-height:40px }
+    .menu-section-title { margin:18px 0 8px; font-size:15px }
+    .menu-history,.menu-updates,.menu-achievements { display:grid; gap:8px; margin:0; padding:0; list-style:none }
+    .menu-history li,.menu-updates li,.menu-achievements li { padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--surface); color:var(--muted); font-size:13px }
+    .menu-achievements li.unlocked { border-color:var(--accent); color:var(--text); box-shadow:inset 3px 0 var(--accent) }
+    .menu-achievements strong { color:var(--text) }
+    .game-menu-button { position:fixed; z-index:10; left:18px; bottom:18px; width:56px; height:56px; min-height:0; margin:0; border:1px solid var(--accent); border-radius:17px; color:#101827; background:var(--accent); font-size:24px; box-shadow:0 8px 24px #0007 }
+    .change-log { position:fixed; z-index:8; left:18px; bottom:84px; width:min(310px,calc(100vw - 36px)); max-height:174px; overflow:hidden; border:1px solid var(--terminal-border); border-radius:13px; color:var(--terminal-text); background:var(--terminal-bg); box-shadow:0 12px 32px #0008; font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace }
+    .change-log-header { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 10px; border-bottom:1px solid var(--terminal-border); color:var(--accent); font-weight:800; letter-spacing:.06em }
+    .change-log-header button { width:24px; min-height:24px; margin:0; padding:0; border:1px solid var(--terminal-border); border-radius:6px; color:var(--terminal-text); background:var(--surface); font-size:14px }
+    .change-log ol { max-height:128px; overflow:auto; margin:0; padding:8px 10px 8px 29px }
+    .change-log li { padding:2px 0; color:var(--muted) }
+    .change-log.collapsed { width:180px; max-height:42px }
+    .change-log.collapsed ol { display:none }
+    .menu-toast { position:fixed; z-index:82; top:20px; left:50%; transform:translateX(-50%); max-width:calc(100vw - 32px); padding:12px 18px; border:1px solid var(--accent); border-radius:999px; color:var(--text); background:var(--card); box-shadow:0 8px 30px #0009; font-weight:700; text-align:center; animation:toast-in .25s ease-out }
+    @keyframes toast-in { from { opacity:0; transform:translate(-50%,-10px) } to { opacity:1; transform:translate(-50%,0) } }
+    @media (max-width:440px) { .game-menu { padding:17px } .menu-stat-grid { grid-template-columns:1fr 1fr } .menu-stat-card { padding:11px } .menu-stat-card strong { font-size:21px } .change-log { max-height:140px } }
+    .code-backdrop { position:fixed; z-index:80; inset:0; background:#070d18a8; backdrop-filter:blur(9px) }
+    .code-dialog { position:fixed; z-index:81; top:50%; left:50%; transform:translate(-50%,-50%); width:min(420px,calc(100vw - 32px)); padding:26px; border:1px solid var(--accent); border-radius:20px; background:var(--card); color:var(--text); text-align:center; box-shadow:0 0 0 4px var(--line),0 24px 70px #000b }
+    .code-dialog h2 { margin:0 0 14px; font-size:22px }
+    .code-dialog p { margin:0 0 18px; color:var(--muted); font-size:15px; line-height:1.8; text-align:left; white-space:pre-line }
+    .code-dialog button { margin:0 }
+    .code-dialog button.secondary { color:var(--text); background:var(--surface); border-color:var(--line) }
+    body.high-contrast { --text:#fff; --muted:#eef2ff; --line:#b8c7e8 }
+    body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after { scroll-behavior:auto !important; animation:none !important; transition:none !important }
+    .number.guess-pop { animation:guess-pop .34s cubic-bezier(.2,.8,.2,1) }
+    .number.win-glow { animation:win-glow .72s ease-in-out 2 }
+    @keyframes guess-pop { 0% { opacity:.45; transform:scale(.72) translateY(8px); filter:blur(4px) } 68% { opacity:1; transform:scale(1.12); filter:blur(0); text-shadow:0 0 24px var(--accent) } 100% { transform:scale(1); text-shadow:none } }
+    @keyframes win-glow { 0%,100% { text-shadow:0 0 0 transparent; transform:scale(1) } 50% { text-shadow:0 0 26px var(--accent),0 0 52px var(--accent); transform:scale(1.08) } }
+    button:active { transform:scale(.975) }
+    .confetti-layer { position:fixed; z-index:50; inset:0; overflow:hidden; pointer-events:none }
+    .confetti-piece { position:absolute; top:-18px; left:var(--x); width:9px; height:14px; border-radius:2px; background:var(--accent); opacity:0; animation:confetti-fall var(--duration) var(--delay) cubic-bezier(.2,.7,.4,1) forwards }
+    .confetti-piece:nth-child(3n) { background:#ffd166 }
+    .confetti-piece:nth-child(3n + 1) { background:#ff6b8a }
+    .confetti-piece:nth-child(4n) { width:7px; height:7px; border-radius:50%; background:#80e8ff }
+    @keyframes confetti-fall { 0% { opacity:0; transform:translate3d(0,-4vh,0) rotate(0) } 10% { opacity:1 } 100% { opacity:0; transform:translate3d(var(--drift),110vh,0) rotate(var(--spin)) } }
+    .troll-screen { position:fixed; z-index:70; inset:0; display:grid; place-items:center; padding:20px; background:#050a14ed; backdrop-filter:blur(7px) }
+    .troll-card { width:min(480px,100%); max-height:calc(100vh - 40px); overflow:auto; padding:24px; border:1px solid var(--terminal-border); border-radius:16px; background:var(--terminal-bg); color:var(--terminal-text); box-shadow:0 0 35px color-mix(in srgb,var(--accent) 35%,transparent); font:15px/1.6 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; white-space:pre-line }
+    .troll-card h2 { margin:0 0 16px; color:var(--accent); font-size:14px; letter-spacing:.12em; text-transform:uppercase }
+    .troll-card p { margin:10px 0 }
+    .troll-card strong { color:#fff; font-weight:900 }
+    .troll-card em { color:var(--accent); font-style:italic }
+    .troll-progress { height:8px; overflow:hidden; margin-top:18px; border-radius:99px; background:var(--surface) }
+    .troll-progress span { display:block; width:0; height:100%; border-radius:inherit; background:var(--accent); animation:troll-progress 6s linear forwards }
+    @keyframes troll-progress { to { width:100% } }
+    body.no-vfx .troll-progress span { animation:none; width:100% }
+    body.reduce-motion .troll-progress span { animation:none; width:100% }
+    .matrix-layer { position:fixed; z-index:70; inset:0; overflow:hidden; pointer-events:none; background:#020907f5 }
+    .matrix-layer.matrix-frozen * { animation-play-state:paused !important }
+    .matrix-column { position:absolute; top:-110%; left:var(--left); color:var(--accent); text-shadow:0 0 9px var(--accent); font:15px/1.2 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; white-space:pre; opacity:.9; animation:matrix-drop var(--duration) var(--delay) linear forwards }
+    .matrix-secret { color:#fff; opacity:1; font-weight:900; text-shadow:0 0 10px #fff,0 0 22px var(--accent) }
+    .matrix-secret.matrix-pending { visibility:hidden; animation:none }
+    .matrix-freeze { position:fixed; z-index:71; inset:0; display:grid; place-items:center; padding:20px; background:#02070feF; backdrop-filter:blur(8px) }
+    .matrix-freeze-card { width:min(460px,100%); padding:28px; border:1px solid var(--accent); border-radius:18px; color:var(--text); background:var(--card); text-align:center; box-shadow:0 0 0 4px var(--line),0 20px 60px #000b }
+    .matrix-freeze-card h2 { margin:0 0 8px; font:800 24px/1.2 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace }
+    .matrix-freeze-card p { margin:0 0 18px; color:var(--muted) }
+    .matrix-freeze-actions { display:grid; grid-template-columns:1fr 14px 1fr; align-items:center; gap:7px }
+    .matrix-freeze-actions button { min-height:46px; margin:0 }
+    .matrix-freeze-actions .matrix-hidden-resume { width:14px; min-height:46px; padding:0; border:0; border-radius:4px; background:transparent; opacity:.01; cursor:default }
+    .matrix-freeze-actions .matrix-hidden-resume:focus-visible { opacity:.65; outline:2px solid var(--accent); cursor:pointer }
+    @keyframes matrix-drop { to { transform:translateY(230vh); opacity:.15 } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1 id="app-title">Devine mon nombre</h1>
+    <p id="app-intro" class="intro">Pense à un nombre entier. La plage dépend du niveau choisi !</p>
+    <p id="range-info" class="admin-help">Nombres de 1 à 100</p>
+
+    <section id="setup">
+      <p id="difficulty-label" class="guess">Choisis un niveau de difficulté</p>
+      <fieldset class="levels" aria-labelledby="difficulty-label">
+        <label class="level-option"><input type="radio" name="difficulty" value="1" checked><span id="level-name-1">Facile</span><span aria-hidden="true">—</span><em id="average-1">'---'</em></label>
+        <label class="level-option"><input type="radio" name="difficulty" value="2"><span id="level-name-2">Moyen</span><span aria-hidden="true">—</span><em id="average-2">'---'</em></label>
+        <label class="level-option"><input type="radio" name="difficulty" value="3"><span id="level-name-3">Impossible</span><span aria-hidden="true">—</span><em id="average-3">'---'</em></label>
+      </fieldset>
+      <label class="challenge-toggle"><input id="timed-mode" type="checkbox"><span id="timed-mode-label">Activer le défi chrono</span></label>
+      <label class="timer-choice"><span id="timer-duration-label">Durée du défi</span><select id="timer-duration" disabled><option value="15">15 s · Rush</option><option value="30" selected>30 s · Standard</option><option value="60">60 s · Détente</option></select></label>
+      <button id="start">Commencer</button>
+      <button id="surprise-mode" class="secondary" type="button">Mode surprise ⚡</button>
+      <button id="daily-start" class="daily-start" type="button">Défi du jour</button>
+      <section id="admin-panel" class="panel admin-console hidden" aria-label="Panneau admin">
+        <span class="admin-mode">Mode admin actif</span>
+        <div class="admin-header"><h2>Console administrateur</h2><button id="admin-close" class="secondary" type="button">Fermer</button></div>
+        <p class="admin-help">Modifie les textes et les moyennes affichées sur l’accueil. Laisse une moyenne vide pour utiliser le calcul automatique.</p>
+        <div class="admin-fields">
+          <label>Titre<input id="admin-title" type="text"></label>
+          <label>Texte d’introduction<input id="admin-intro" type="text"></label>
+          <label>Texte du choix de niveau<input id="admin-prompt" type="text"></label>
+          <label>Nom du niveau facile<input id="admin-level-1" type="text"></label>
+          <label>Moyenne facile (vide = automatique)<input id="admin-average-1" type="text" placeholder="Ex. 4,2"></label>
+          <label>Nom du niveau moyen<input id="admin-level-2" type="text"></label>
+          <label>Moyenne moyenne (vide = automatique)<input id="admin-average-2" type="text" placeholder="Ex. 6"></label>
+          <label>Nom du niveau 3<input id="admin-level-3" type="text"></label>
+          <label>Moyenne Impossible (vide = automatique)<input id="admin-average-3" type="text" placeholder="Ex. 19,8"></label>
+          <label>Bouton de démarrage<input id="admin-start" type="text"></label>
+        </div>
+        <button id="admin-save" type="button">Enregistrer</button>
+        <button id="admin-reset" class="secondary" type="button">Rétablir les textes et moyennes auto</button>
+        <p id="admin-status" class="admin-help" role="status"></p>
+        <section class="admin-command-list" aria-labelledby="admin-commands-title">
+          <h3 id="admin-commands-title">Commandes et codes</h3>
+          <p>Clique sur un élément pour lancer la commande et afficher son résultat.</p>
+          <button type="button" data-admin-command="clear">clear</button>
+          <button type="button" data-admin-command="help()">help()</button>
+          <button type="button" data-admin-command="fortune()">fortune()</button>
+          <button type="button" data-admin-command="sudo()">sudo()</button>
+          <button type="button" data-admin-command="troll()">troll()</button>
+          <button type="button" data-admin-command="matrix()">matrix()</button>
+          <button type="button" data-admin-command="show.troll()">show.troll()</button>
+          <button type="button" data-admin-command="show.matrix()">show.matrix()</button>
+          <button type="button" data-admin-command="show.AP()">show.AP()</button>
+          <button type="button" data-admin-command="hide.AP()">hide.AP()</button>
+          <button type="button" data-admin-code="troll">TBLX — code du troll</button>
+          <button type="button" data-admin-code="matrix">Code Matrix actuel</button>
+          <output id="admin-command-result" aria-live="polite">Résultat des commandes : en attente.</output>
+        </section>
+      </section>
+    </section>
+
+    <form id="admin-unlock" class="admin-unlock" autocomplete="off">
+      <label class="sr-only" for="admin-phrase">Texte</label>
+      <input id="admin-phrase" type="text" placeholder="texte" aria-describedby="unlock-error" spellcheck="false" autocapitalize="off">
+      <p id="unlock-error" role="status" aria-live="polite"></p>
+    </form>
+    <button id="admin-toggle" class="admin-app hidden" type="button" aria-expanded="false" aria-controls="admin-panel" aria-label="Ouvrir le panneau admin">AP</button>
+
+    <section id="game" class="panel hidden" aria-live="polite">
+      <p id="guess-label" class="guess">Mon essai :</p>
+      <p id="number" class="number">—</p>
+      <p id="game-question">Mon nombre est-il trop petit, trop grand, ou correct ?</p>
+      <p id="keyboard-shortcuts" class="keyboard-shortcuts">Raccourcis : ↑ Plus · ↓ Moins · C Correct</p>
+      <div class="range-meter" aria-label="Étendue de la recherche">
+        <div class="range-meter-label"><span>Zone de recherche</span><span id="range-meter-value">100 %</span></div>
+        <div class="range-meter-track"><span id="range-meter-fill"></span></div>
+      </div>
+      <p id="timer-badge" class="timer-badge hidden"><span>CHRONO</span><strong id="timer-value">00:30</strong></p>
+      <div class="actions">
+        <button id="higher">Plus</button>
+        <button id="lower">Moins</button>
+        <button id="correct" class="correct">Correct !</button>
+      </div>
+      <p id="message" role="status">Dis-moi si ton nombre est plus grand ou plus petit.</p>
+      <button id="restart" class="secondary hidden">Recommencer</button>
+      <button id="leave" class="leave-btn">Leave</button>
+    </section>
+  </main>
+  <button id="settings-gear" class="settings-gear" type="button" aria-label="Ouvrir les paramètres" aria-haspopup="dialog">⚙</button>
+  <div id="settings-backdrop" class="settings-backdrop hidden"></div>
+  <section id="settings-dialog" class="settings-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="settings-header">
+      <h2 id="settings-title">Paramètres</h2>
+      <button id="settings-close" class="secondary" type="button">Fermer</button>
+    </div>
+    <section class="settings-group">
+      <h3 id="audio-heading">Audio</h3>
+      <div class="setting-row"><label id="sfx-label" for="sfx-enabled">SFX</label><input id="sfx-enabled" type="checkbox" checked></div>
+      <div class="setting-row"><label id="sfx-volume-label" for="sfx-volume">Volume des SFX</label><input id="sfx-volume" type="range" min="0" max="100" value="28"><output id="sfx-volume-value">28%</output></div>
+      <div class="setting-row"><label id="music-label" for="music-enabled">Musique</label><input id="music-enabled" type="checkbox"></div>
+      <div class="setting-row"><label id="music-volume-label" for="music-volume">Volume de la musique</label><input id="music-volume" type="range" min="0" max="100" value="22"><output id="music-volume-value">22%</output></div>
+      <p id="music-note" class="settings-note">Mélodie originale générée dans le jeu, sans téléchargement.</p>
+    </section>
+    <section class="settings-group">
+      <h3 id="language-heading">Langue</h3>
+      <div class="language-options" role="group" aria-label="Langue">
+        <button type="button" data-language="fr" aria-pressed="true">🇫🇷 Français</button>
+        <button type="button" data-language="en" aria-pressed="false">🇬🇧 English</button>
+        <button type="button" data-language="es" aria-pressed="false">🇪🇸 Español</button>
+      </div>
+    </section>
+    <section class="settings-group">
+      <h3 id="theme-heading">Apparence</h3>
+      <div class="theme-options" role="group" aria-label="Couleurs">
+        <button type="button" data-theme-choice="blue" aria-pressed="true">🔵 Bleu</button>
+        <button type="button" data-theme-choice="green" aria-pressed="false">🟢 Vert</button>
+        <button type="button" data-theme-choice="red" aria-pressed="false">🔴 Rouge</button>
+      </div>
+    </section>
+    <section class="settings-group">
+      <h3 id="accessibility-heading">Confort</h3>
+      <div class="setting-row"><label id="contrast-label" for="high-contrast">Contraste renforcé</label><input id="high-contrast" type="checkbox"></div>
+      <div class="setting-row"><label id="vfx-label" for="visual-effects">Effets visuels</label><input id="visual-effects" type="checkbox" checked></div>
+      <div class="setting-row"><label id="motion-label" for="reduce-motion">Réduire les animations</label><input id="reduce-motion" type="checkbox"></div>
+    </section>
+  </section>
+  <div id="code-backdrop" class="code-backdrop hidden"></div>
+  <section id="code-dialog" class="code-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="code-dialog-title">
+    <h2 id="code-dialog-title">Code reconnu</h2>
+    <p id="code-dialog-message">Tu t’es fait troll comme un TBL.</p>
+    <button id="code-dialog-close" class="secondary" type="button">Fermer</button>
+  </section>
+  <button id="game-menu-button" class="game-menu-button" type="button" aria-label="Ouvrir le menu du jeu" aria-haspopup="dialog" aria-expanded="false">☰</button>
+  <aside id="change-log" class="change-log collapsed" aria-label="Journal des changements">
+    <div class="change-log-header"><span>PATCH LOG // BUILD 02</span><button id="change-log-toggle" type="button" aria-label="Développer le journal">+</button></div>
+    <ol id="change-log-list"></ol>
+  </aside>
+  <div id="game-menu-backdrop" class="game-menu-backdrop hidden"></div>
+  <section id="game-menu" class="game-menu hidden" role="dialog" aria-modal="true" aria-labelledby="game-menu-title">
+    <header class="game-menu-header"><div><span class="game-menu-kicker">ARCADE / PLAYER HUB</span><h2 id="game-menu-title">Menu du jeu</h2></div><button id="game-menu-close" class="secondary" type="button">Fermer</button></header>
+    <nav class="game-menu-tabs" role="tablist" aria-label="Sections du menu">
+      <button type="button" role="tab" data-menu-tab="overview" aria-selected="true">Aperçu</button>
+      <button type="button" role="tab" data-menu-tab="history" aria-selected="false">Historique</button>
+      <button type="button" role="tab" data-menu-tab="achievements" aria-selected="false">Succès</button>
+      <button type="button" role="tab" data-menu-tab="updates" aria-selected="false">Nouveautés</button>
+    </nav>
+    <section data-menu-view="overview">
+      <div class="menu-stat-grid">
+        <article class="menu-stat-card"><span>Parties jouées</span><strong id="menu-games-played">0</strong></article>
+        <article class="menu-stat-card"><span>Moyenne d’essais</span><strong id="menu-average-attempts">—</strong></article>
+        <article class="menu-stat-card"><span>Record d’essais</span><strong id="menu-best-attempts">—</strong></article>
+        <article class="menu-stat-card"><span>Meilleure série</span><strong id="menu-best-streak">0</strong></article>
+        <article class="menu-stat-card"><span>Victoires</span><strong id="menu-wins">0</strong></article>
+        <article class="menu-stat-card"><span>Meilleur chrono</span><strong id="menu-best-time">—</strong></article>
+        <article class="menu-stat-card"><span>Défis quotidiens réussis</span><strong id="menu-daily-wins">0</strong></article>
+      </div>
+      <section class="daily-challenge-card" aria-labelledby="menu-daily-title">
+        <h3 id="menu-daily-title">Défi du jour</h3>
+        <p id="menu-daily-description"></p>
+        <button id="menu-daily-start" type="button">Jouer le défi</button>
+      </section>
+      <h3 class="menu-section-title">Dernière partie</h3><p id="menu-last-game" class="admin-help">Aucune partie terminée pour l’instant.</p>
+      <button id="menu-reset-stats" class="secondary" type="button">Réinitialiser statistiques et historique</button>
+    </section>
+    <section data-menu-view="history" class="hidden"><h3 class="menu-section-title">12 dernières parties</h3><ul id="menu-history-list" class="menu-history"></ul></section>
+    <section data-menu-view="achievements" class="hidden"><h3 class="menu-section-title">Succès à débloquer</h3><ul id="menu-achievement-list" class="menu-achievements"></ul></section>
+    <section data-menu-view="updates" class="hidden"><h3 class="menu-section-title">Tout ce qui vient d’arriver</h3><ul id="menu-updates-list" class="menu-updates"></ul></section>
+  </section>
+  <div id="menu-toast" class="menu-toast hidden" role="status" aria-live="polite"></div>
+  <script>
+    const setup = document.querySelector('#setup');
+    const game = document.querySelector('#game');
+    const number = document.querySelector('#number');
+    const message = document.querySelector('#message');
+    const restart = document.querySelector('#restart');
+    const guessButtons = [...document.querySelectorAll('#higher, #lower, #correct')];
+    let min = 1, max = 100, current = 0, difficulty = 1, attempts = 0;
+    const historyKey = 'devineMonNombre.history.v1';
+    const playerDataKey = 'devineMonNombre.player-data.v1';
+    const menuSeenKey = 'devineMonNombre.menu-seen.v1';
+    const settingsKey = 'devineMonNombre.admin.v1';
+    const preferencesKey = 'devineMonNombre.preferences.v1';
+    const defaultPreferences = { sfx: true, sfxVolume: 28, music: false, musicVolume: 22, language: 'fr', theme: 'blue', highContrast: false, reduceMotion: false, visualEffects: true, timerDuration: 30 };
+    const translations = {
+      fr: {
+        title: 'Devine mon nombre', intro: 'Pense à un nombre entier. La plage dépend du niveau choisi !', range: 'Nombres de 1 à', prompt: 'Choisis un niveau de difficulté', easy: 'Facile', medium: 'Moyen', impossible: 'Impossible', start: 'Commencer', guess: 'Mon essai :', question: 'Mon nombre est-il trop petit, trop grand, ou correct ?', higher: 'Plus', lower: 'Moins', correct: 'Correct !', initial: 'Dis-moi si ton nombre est plus grand ou plus petit.', searching: 'Je cherche entre', inconsistent: 'Tes réponses sont incohérentes : aucun nombre ne correspond. Recommence et vérifie tes indications.', win: 'Bien joué, c’était cool ! 😄', timeout: 'Temps écoulé ! Retente le défi.', restart: 'Recommencer', settings: 'Paramètres', close: 'Fermer', audio: 'Audio', sfx: 'SFX', sfxVolume: 'Volume des SFX', music: 'Musique', musicVolume: 'Volume de la musique', musicNote: 'Mélodie originale générée dans le jeu, sans téléchargement.', language: 'Langue', appearance: 'Apparence', blue: 'Bleu', green: 'Vert', red: 'Rouge', comfort: 'Confort', contrast: 'Contraste renforcé', motion: 'Réduire les animations', vfx: 'Effets visuels', gear: 'Ouvrir les paramètres', colors: 'Couleurs', trollTitle: 'Terminal', troll1: 'Décryptage en cours..', troll2: 'Décryptage réussi..', troll3: 'Analyse des données de l’utilisateur', troll4: 'Recryptage en cours', troll5: 'Extraction de vos données réussie', troll6: 'À bientôt !', matrixWinTitle: 'Bannissement du terminal', matrixWinText: 'Code accepté. Votre session vient d’être bannie du terminal.'
+      },
+      en: {
+        title: 'Guess my number', intro: 'Think of a whole number. The range depends on the difficulty!', range: 'Numbers from 1 to', prompt: 'Choose a difficulty', easy: 'Easy', medium: 'Medium', impossible: 'Impossible', start: 'Start', guess: 'My guess:', question: 'Is my number too low, too high, or correct?', higher: 'Higher', lower: 'Lower', correct: 'Correct!', initial: 'Tell me if your number is higher or lower.', searching: 'Searching between', inconsistent: 'Your answers do not match any number. Restart and check your hints.', win: 'Nice, that was fun! 😄', timeout: 'Time’s up! Try the challenge again.', restart: 'Play again', settings: 'Settings', close: 'Close', audio: 'Audio', sfx: 'SFX', sfxVolume: 'SFX volume', music: 'Music', musicVolume: 'Music volume', musicNote: 'Original melody generated in the game. No download.', language: 'Language', appearance: 'Appearance', blue: 'Blue', green: 'Green', red: 'Red', comfort: 'Comfort', contrast: 'High contrast', motion: 'Reduce animations', vfx: 'Visual effects', gear: 'Open settings', colors: 'Colors', trollTitle: 'Terminal', troll1: 'Decrypting...', troll2: 'Decryption successful...', troll3: 'Analyzing user data', troll4: 'Encrypting again', troll5: 'Your data extraction was successful', troll6: 'See you soon!', matrixWinTitle: 'Terminal ban', matrixWinText: 'Code accepted. Your session has been banned from the terminal.'
+      },
+      es: {
+        title: 'Adivina mi número', intro: 'Piensa en un número entero. ¡El rango depende de la dificultad!', range: 'Números del 1 al', prompt: 'Elige la dificultad', easy: 'Fácil', medium: 'Medio', impossible: 'Imposible', start: 'Empezar', guess: 'Mi intento:', question: '¿Mi número es demasiado bajo, demasiado alto o correcto?', higher: 'Más', lower: 'Menos', correct: '¡Correcto!', initial: 'Dime si tu número es mayor o menor.', searching: 'Busco entre', inconsistent: 'Tus respuestas no corresponden a ningún número. Reinicia y revisa tus pistas.', win: '¡Bien, estuvo divertido! 😄', timeout: '¡Se acabó el tiempo! Intenta el desafío otra vez.', restart: 'Jugar otra vez', settings: 'Ajustes', close: 'Cerrar', audio: 'Audio', sfx: 'Efectos de sonido', sfxVolume: 'Volumen de efectos', music: 'Música', musicVolume: 'Volumen de música', musicNote: 'Melodía original generada en el juego, sin descargas.', language: 'Idioma', appearance: 'Apariencia', blue: 'Azul', green: 'Verde', red: 'Rojo', comfort: 'Comodidad', contrast: 'Alto contraste', motion: 'Reducir animaciones', vfx: 'Efectos visuales', gear: 'Abrir ajustes', colors: 'Colores', trollTitle: 'Terminal', troll1: 'Descifrando..', troll2: 'Descifrado correcto..', troll3: 'Analizando los datos del usuario', troll4: 'Volviendo a cifrar', troll5: 'Extracción de tus datos completada', troll6: '¡Hasta pronto!', matrixWinTitle: 'Baneo del terminal', matrixWinText: 'Código aceptado. Tu sesión acaba de ser expulsada del terminal.'
+      }
+    };
+    const trollCode = 'TBLX';
+    let trollWasPlayed = false;
+    let matrixCode = '';
+    function createMatrixCode() {
+      const symbols = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let code;
+      do {
+        code = Array.from({ length: 8 }, () => symbols[Math.floor(Math.random() * symbols.length)]).join('');
+      } while (code === trollCode);
+      return code;
+    }
+    const trollMonologue = `JOURNAL DE SESSION / contrôle de cohérence
+
+Le service de synchronisation a terminé la vérification sta<strong>T</strong>istique des éléments temporaires. Le rapport indique que le ta<strong>B</strong>leau d’indexation répond normalement, malgré une latence mesurée entre le serveur principal et le tiroir à chaussettes le plus proche. Le contrôle d’intégrité a comparé les empreintes locales avec celles d’un <em>K</em>angourou certifié, procédure standard depuis la mise à jour du protocole des mardis.
+
+L’analyse des métadonnées poursuit son cours. Les paquets sont classés par ordre alphabétique, puis par température supposée, puis selon leur capacité à reconnaître une aubergine dans une salle d’attente. Le fi<strong>L</strong>tre de cohérence a détecté une différence de trois pixels dans le calendrier lunaire, mais le module de validation assure que les données restent parfaitement parallèles au bord de la table. Le chec<em>K</em>-sum de reprise a demandé une pause café ; sa requête a été transmise au comité des prises murales.
+
+La séquence de recryptage prépare maintenant l’inde<strong>X</strong>ation finale. Les blocs sont rangés dans des enveloppes numérotées, puis confiés au mar<em>K</em>eur de ventilation pour une lecture à voix basse. Aucun élément ne sera déplacé avant que le rapport des trombones n’ait confirmé l’alignement du nord magnétique avec la poignée de la porte. La jauge continue d’avancer à une vitesse conforme aux prévisions, lesquelles ont été rédigées par un pigeon qui n’a pas encore validé son permis de conduire.
+
+Synthèse : synchronisation terminée, inventaire relu, trois virgules replacées, un parapluie rendu à son propriétaire et deux questions envoyées au service des objets trouvés. Le document final sera archivé dans le dossier « peut-être », sous-section « plus tard, probablement ». Merci de ne pas interrompre le processus avant la fin du contrôle des agrafes, même si les agrafes jurent qu’elles ont déjà tout vérifié.`;
+    const terminalResponses = {
+      fr: { helpTitle: 'Aide du terminal', help: 'help()\nclear\ntroll()\nfortune()\nsudo()\nmatrix()', sudo: 'Permission refusée : le chat du terminal garde la clé.', matrixOff: 'Active les effets visuels pour voir Matrix.', fortunes: ['Un nombre pair croisera bientôt ta route. Il portera probablement une écharpe.', 'Les astres conseillent de ne pas faire confiance aux brocolis pressés.', 'Aujourd’hui, ton aura est parfaitement alignée avec le bouton Recommencer.', 'Une grande découverte t’attend au fond du prochain tiroir. Peut-être une cuillère.'] },
+      en: { helpTitle: 'Terminal help', help: 'help()\nclear\ntroll()\nfortune()\nsudo()\nmatrix()', sudo: 'Permission denied: the terminal cat has the key.', matrixOff: 'Turn on visual effects to see Matrix.', fortunes: ['An even number will cross your path soon. It will probably wear a scarf.', 'The stars advise against trusting hurried broccoli.', 'Today your aura is perfectly aligned with the Play Again button.', 'A great discovery awaits in the next drawer. Possibly a spoon.'] },
+      es: { helpTitle: 'Ayuda del terminal', help: 'help()\nclear\ntroll()\nfortune()\nsudo()\nmatrix()', sudo: 'Permiso denegado: el gato del terminal tiene la llave.', matrixOff: 'Activa los efectos visuales para ver Matrix.', fortunes: ['Pronto encontrarás un número par. Probablemente llevará una bufanda.', 'Los astros aconsejan no confiar en el brócoli apresurado.', 'Hoy tu aura está perfectamente alineada con el botón Reintentar.', 'Un gran descubrimiento te espera en el próximo cajón. Quizá una cuchara.'] }
+    };
+    function loadPreferences() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(preferencesKey) || '{}');
+        return {
+          ...defaultPreferences,
+          ...saved,
+          sfxVolume: Math.max(0, Math.min(100, Number(saved.sfxVolume ?? defaultPreferences.sfxVolume))),
+          musicVolume: Math.max(0, Math.min(100, Number(saved.musicVolume ?? defaultPreferences.musicVolume))),
+          timerDuration: [15, 30, 60].includes(Number(saved.timerDuration)) ? Number(saved.timerDuration) : defaultPreferences.timerDuration,
+          language: ['fr', 'en', 'es'].includes(saved.language) ? saved.language : defaultPreferences.language,
+          theme: ['blue', 'green', 'red'].includes(saved.theme) ? saved.theme : defaultPreferences.theme
+        };
+      }
+      catch { return { ...defaultPreferences }; }
+    }
+    let preferences = loadPreferences();
+    const tr = key => translations[preferences.language][key];
+    const formatInteger = value => Math.trunc(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    let roundResult = 'idle';
+    let timedMode = false;
+    let dailyMode = false;
+    let launchMode = 'normal';
+    let currentDailyChallenge = null;
+    let timerRemaining = 30;
+    let timerDuration = 30;
+    let timerInterval = null;
+    let roundStartedAt = 0;
+    let roundRecorded = false;
+    const defaultSettings = {
+      title: 'Devine mon nombre',
+      intro: 'Pense à un nombre entier. La plage dépend du niveau choisi !',
+      prompt: 'Choisis un niveau de difficulté',
+      levels: { 1: 'Facile', 2: 'Moyen', 3: 'Impossible' },
+      start: 'Commencer',
+      averages: { 1: '', 2: '', 3: '' }
+    };
+    function freshDefaultSettings() {
+      return JSON.parse(JSON.stringify(defaultSettings));
+    }
+    let settings = loadSettings();
+    let history = loadHistory();
+    let playerData = loadPlayerData();
+
+    function loadSettings() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(settingsKey) || '{}');
+        return {
+          ...defaultSettings, ...saved,
+          levels: { ...defaultSettings.levels, ...(saved.levels || {}) },
+          averages: { ...defaultSettings.averages, ...(saved.averages || {}) }
+        };
+      } catch { return freshDefaultSettings(); }
+    }
+    function applySettings() {
+      applyLanguage();
+      document.querySelector('#admin-title').value = settings.title;
+      document.querySelector('#admin-intro').value = settings.intro;
+      document.querySelector('#admin-prompt').value = settings.prompt;
+      document.querySelector('#admin-level-1').value = settings.levels[1];
+      document.querySelector('#admin-level-2').value = settings.levels[2];
+      document.querySelector('#admin-level-3').value = settings.levels[3];
+      document.querySelector('#admin-start').value = settings.start;
+      document.querySelector('#admin-average-1').value = settings.averages[1];
+      document.querySelector('#admin-average-2').value = settings.averages[2];
+      document.querySelector('#admin-average-3').value = settings.averages[3];
+      updateDifficultyLabels();
+    }
+    function applyLanguage() {
+      const t = translations[preferences.language];
+      document.documentElement.lang = preferences.language;
+      document.querySelector('#app-title').textContent = settings.title === defaultSettings.title ? t.title : settings.title;
+      const oldDefaultIntro = 'Pense à un nombre entier entre 1 et 100. Choisis comment je vais essayer de le trouver !';
+      document.querySelector('#app-intro').textContent = settings.intro === defaultSettings.intro || settings.intro === oldDefaultIntro ? t.intro : settings.intro;
+      document.querySelector('#difficulty-label').textContent = settings.prompt === defaultSettings.prompt ? t.prompt : settings.prompt;
+      document.querySelector('#level-name-1').textContent = settings.levels[1] === defaultSettings.levels[1] ? t.easy : settings.levels[1];
+      document.querySelector('#level-name-2').textContent = settings.levels[2] === defaultSettings.levels[2] ? t.medium : settings.levels[2];
+      document.querySelector('#level-name-3').textContent = settings.levels[3] === defaultSettings.levels[3] ? t.impossible : settings.levels[3];
+      document.querySelector('#start').textContent = settings.start === defaultSettings.start ? t.start : settings.start;
+      document.querySelector('#timed-mode-label').textContent = menuTranslations[preferences.language].timerMode;
+      document.querySelector('#timer-duration-label').textContent = menuTranslations[preferences.language].timerLabel;
+      document.querySelector('#surprise-mode').textContent = menuTranslations[preferences.language].surprise;
+      document.querySelector('#daily-start').textContent = menuTranslations[preferences.language].dailyTitle;
+      document.querySelector('#keyboard-shortcuts').textContent = menuTranslations[preferences.language].keys;
+      document.querySelector('.range-meter-label span:first-child').textContent = menuTranslations[preferences.language].rangeLabel;
+      document.querySelector('#timer-badge span').textContent = menuTranslations[preferences.language].timerWord;
+      const selectedDifficulty = Number(document.querySelector('input[name="difficulty"]:checked')?.value || 1);
+      const rangeEnd = { 1: 10000, 2: 1000, 3: 100 }[selectedDifficulty] || 10000;
+      document.querySelector('#range-info').textContent = `${t.range} ${formatInteger(rangeEnd)}`;
+      document.querySelector('#guess-label').textContent = t.guess;
+      document.querySelector('#game-question').textContent = t.question;
+      document.querySelector('#higher').textContent = t.higher;
+      document.querySelector('#lower').textContent = t.lower;
+      document.querySelector('#correct').textContent = t.correct;
+      document.querySelector('#restart').textContent = t.restart;
+      document.querySelector('#leave').textContent = 'Leave';
+      const liveMessage = document.querySelector('#message');
+      if (roundResult === 'won') liveMessage.textContent = t.win;
+      else if (roundResult === 'inconsistent') liveMessage.textContent = t.inconsistent;
+      else if (roundResult === 'searching') liveMessage.textContent = `${t.searching} ${formatInteger(min)}–${formatInteger(max)}.`;
+      else liveMessage.textContent = t.initial;
+      document.querySelector('#settings-title').textContent = t.settings;
+      document.querySelector('#settings-close').textContent = t.close;
+      document.querySelector('#audio-heading').textContent = t.audio;
+      document.querySelector('#sfx-label').textContent = t.sfx;
+      document.querySelector('#sfx-volume-label').textContent = t.sfxVolume;
+      document.querySelector('#music-label').textContent = t.music;
+      document.querySelector('#music-volume-label').textContent = t.musicVolume;
+      document.querySelector('#music-note').textContent = t.musicNote;
+      document.querySelector('#language-heading').textContent = t.language;
+      document.querySelector('#theme-heading').textContent = t.appearance;
+      document.querySelector('#accessibility-heading').textContent = t.comfort;
+      document.querySelector('#contrast-label').textContent = t.contrast;
+      document.querySelector('#vfx-label').textContent = t.vfx;
+      document.querySelector('#motion-label').textContent = t.motion;
+      document.querySelector('#settings-gear').setAttribute('aria-label', t.gear);
+      document.querySelector('.language-options').setAttribute('aria-label', t.language);
+      document.querySelector('.theme-options').setAttribute('aria-label', t.colors);
+      document.querySelector('[data-theme-choice="blue"]').textContent = `🔵 ${t.blue}`;
+      document.querySelector('[data-theme-choice="green"]').textContent = `🟢 ${t.green}`;
+      document.querySelector('[data-theme-choice="red"]').textContent = `🔴 ${t.red}`;
+      renderGameMenu();
+    }
+    function savePreferences() {
+      try { localStorage.setItem(preferencesKey, JSON.stringify(preferences)); } catch {}
+    }
+    function updatePreferenceControls() {
+      document.body.dataset.theme = preferences.theme;
+      document.body.classList.toggle('high-contrast', preferences.highContrast);
+      document.body.classList.toggle('reduce-motion', preferences.reduceMotion);
+      document.body.classList.toggle('no-vfx', !preferences.visualEffects);
+      document.querySelector('#sfx-enabled').checked = preferences.sfx;
+      document.querySelector('#sfx-volume').value = preferences.sfxVolume;
+      document.querySelector('#sfx-volume-value').value = `${preferences.sfxVolume}%`;
+      document.querySelector('#music-enabled').checked = preferences.music;
+      document.querySelector('#music-volume').value = preferences.musicVolume;
+      document.querySelector('#music-volume-value').value = `${preferences.musicVolume}%`;
+      document.querySelector('#high-contrast').checked = preferences.highContrast;
+      document.querySelector('#visual-effects').checked = preferences.visualEffects;
+      document.querySelector('#reduce-motion').checked = preferences.reduceMotion;
+      document.querySelector('#timer-duration').value = String(preferences.timerDuration);
+      document.querySelectorAll('[data-language]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.language === preferences.language)));
+      document.querySelectorAll('[data-theme-choice]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.themeChoice === preferences.theme)));
+    }
+    function persistPreferences() {
+      savePreferences();
+      updatePreferenceControls();
+      applyLanguage();
+      updateDifficultyLabels();
+    }
+
+    let audioContext = null;
+    let musicTimer = null;
+    let musicStep = 0;
+    function getAudioContext() {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return null;
+      if (!audioContext) audioContext = new AudioContextClass();
+      if (audioContext.state === 'suspended') audioContext.resume().catch(() => {});
+      return audioContext;
+    }
+    function playTone(frequency, duration, volume, type = 'sine') {
+      const context = getAudioContext();
+      if (!context) return;
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      const now = context.currentTime;
+      oscillator.type = type;
+      oscillator.frequency.setValueAtTime(frequency, now);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, volume), now + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start(now);
+      oscillator.stop(now + duration + 0.02);
+    }
+    function playSfx(kind = 'tap') {
+      if (!preferences.sfx || preferences.sfxVolume <= 0) return;
+      const volume = preferences.sfxVolume / 100 * 0.11;
+      const notes = kind === 'success' ? [660, 880] : [kind === 'higher' ? 560 : kind === 'lower' ? 390 : 470];
+      notes.forEach((frequency, index) => playTone(frequency, kind === 'success' ? 0.16 : 0.075, volume, 'triangle'));
+    }
+    function stopMusic() {
+      if (musicTimer !== null) window.clearInterval(musicTimer);
+      musicTimer = null;
+    }
+    function startMusic() {
+      if (!preferences.music || musicTimer !== null) return;
+      const context = getAudioContext();
+      if (!context) return;
+      const melody = [261.63, 329.63, 392, 329.63, 293.66, 349.23, 440, 349.23, 261.63, 392, 329.63, 293.66];
+      musicStep = 0;
+      const playNext = () => {
+        if (!preferences.music) { stopMusic(); return; }
+        const note = melody[musicStep % melody.length];
+        const bass = musicStep % 4 === 0 ? note / 2 : note;
+        const amp = preferences.musicVolume / 100 * 0.045;
+        playTone(bass, 0.38, amp, 'triangle');
+        if (musicStep % 2 === 0) playTone(note, 0.24, amp * 0.55, 'sine');
+        musicStep++;
+      };
+      playNext();
+      musicTimer = window.setInterval(playNext, 420);
+    }
+    function openSettings() {
+      if (timerInterval !== null) stopRoundTimer();
+      document.querySelector('#settings-backdrop').classList.remove('hidden');
+      document.querySelector('#settings-dialog').classList.remove('hidden');
+      if (preferences.music) startMusic();
+      document.querySelector('#settings-close').focus();
+    }
+    function closeSettings() {
+      document.querySelector('#settings-backdrop').classList.add('hidden');
+      document.querySelector('#settings-dialog').classList.add('hidden');
+      if (timedMode && roundResult === 'searching' && timerInterval === null && timerRemaining > 0) startRoundTimer(false);
+      document.querySelector('#settings-gear').focus();
+    }
+    function openCodeDialog(title = 'Code reconnu', text = 'Tu t’es fait troll comme un TBL.') {
+      document.querySelector('#code-dialog-title').textContent = title;
+      document.querySelector('#code-dialog-message').textContent = text;
+      document.querySelector('#code-backdrop').classList.remove('hidden');
+      document.querySelector('#code-dialog').classList.remove('hidden');
+      document.querySelector('#code-dialog-close').focus();
+    }
+    function closeCodeDialog() {
+      document.querySelector('#code-backdrop').classList.add('hidden');
+      document.querySelector('#code-dialog').classList.add('hidden');
+      document.querySelector('#admin-phrase').focus();
+    }
+    function animateGuess() {
+      if (!preferences.visualEffects || preferences.reduceMotion) return;
+      number.classList.remove('win-glow', 'guess-pop');
+      void number.offsetWidth;
+      number.classList.add('guess-pop');
+    }
+    function celebrateWin() {
+      if (!preferences.visualEffects || preferences.reduceMotion) return;
+      number.classList.remove('guess-pop', 'win-glow');
+      void number.offsetWidth;
+      number.classList.add('win-glow');
+      const layer = document.createElement('div');
+      layer.className = 'confetti-layer';
+      for (let i = 0; i < 46; i++) {
+        const piece = document.createElement('span');
+        piece.className = 'confetti-piece';
+        piece.style.setProperty('--x', `${Math.random() * 100}vw`);
+        piece.style.setProperty('--drift', `${Math.random() * 30 - 15}vw`);
+        piece.style.setProperty('--spin', `${Math.random() * 900 - 450}deg`);
+        piece.style.setProperty('--duration', `${1.2 + Math.random() * 1.1}s`);
+        piece.style.setProperty('--delay', `${Math.random() * 0.35}s`);
+        layer.append(piece);
+      }
+      document.body.append(layer);
+      window.setTimeout(() => layer.remove(), 2600);
+    }
+    function runTroll() {
+      const t = translations[preferences.language];
+      trollWasPlayed = true;
+      const overlay = document.createElement('div');
+      overlay.className = 'troll-screen';
+      const card = document.createElement('div');
+      card.className = 'troll-card';
+      const title = document.createElement('h2');
+      title.textContent = t.trollTitle;
+      const line = document.createElement('p');
+      line.textContent = t.troll1;
+      line.setAttribute('aria-live', 'polite');
+      const progress = document.createElement('div');
+      progress.className = 'troll-progress';
+      progress.innerHTML = '<span></span>';
+      card.append(title, line, progress);
+      overlay.append(card);
+      document.body.append(overlay);
+      if (preferences.sfx) playSfx('success');
+      const timers = [];
+      [t.troll2, t.troll3, t.troll4, t.troll5, t.troll6].forEach((text, index) => {
+        timers.push(window.setTimeout(() => { line.textContent = text; }, (index + 1) * 900));
+      });
+      timers.push(window.setTimeout(() => { line.innerHTML = trollMonologue; }, 5200));
+      let keyPresses = 0;
+      const skipWithKey = event => {
+        if (!overlay.isConnected || event.key.toLowerCase() !== 'k' || event.repeat) return;
+        event.preventDefault();
+        keyPresses++;
+        if (keyPresses >= 3) {
+          timers.forEach(timer => window.clearTimeout(timer));
+          overlay.remove();
+          document.removeEventListener('keydown', skipWithKey);
+        }
+      };
+      document.addEventListener('keydown', skipWithKey);
+    }
+    function runMatrix() {
+      const output = document.querySelector('#unlock-error');
+      if (!preferences.visualEffects || preferences.reduceMotion) {
+        matrixCode = '';
+        output.classList.remove('success');
+        output.textContent = terminalResponses[preferences.language].matrixOff;
+        return;
+      }
+      output.classList.remove('success');
+      output.textContent = '';
+      const layer = document.createElement('div');
+      layer.className = 'matrix-layer';
+      const symbols = '01ABCDEFGHIJKLMNOPQRSTUVWXYZ#$%*+-';
+      if (!matrixCode) matrixCode = createMatrixCode();
+      const secretColumn = Math.floor(Math.random() * 30);
+      let highlightedColumn = null;
+      for (let i = 0; i < 30; i++) {
+        const column = document.createElement('span');
+        column.className = 'matrix-column';
+        column.style.setProperty('--left', `${i * 3.5 + Math.random() * 2}vw`);
+        if (i === secretColumn) {
+          column.classList.add('matrix-secret', 'matrix-pending');
+          column.style.setProperty('--duration', '4s');
+          column.style.setProperty('--delay', '0s');
+          column.textContent = matrixCode.split('').join('\n');
+          highlightedColumn = column;
+        } else {
+          column.style.setProperty('--duration', `${2.2 + Math.random() * 1.7}s`);
+          column.style.setProperty('--delay', `${Math.random() * 0.6}s`);
+          column.textContent = Array.from({ length: 26 }, () => symbols[Math.floor(Math.random() * symbols.length)]).join('\n');
+        }
+        layer.append(column);
+      }
+      document.body.append(layer);
+      let freeze = null;
+      window.setTimeout(() => {
+      if (!layer.isConnected) return;
+      layer.querySelectorAll('.matrix-column:not(.matrix-pending)').forEach(column => column.remove());
+      layer.classList.add('matrix-frozen');
+      freeze = document.createElement('div');
+      freeze.className = 'matrix-freeze';
+      freeze.setAttribute('role', 'dialog');
+      freeze.setAttribute('aria-modal', 'true');
+      freeze.setAttribute('aria-labelledby', 'matrix-freeze-title');
+      const card = document.createElement('div');
+      card.className = 'matrix-freeze-card';
+      const title = document.createElement('h2');
+      title.id = 'matrix-freeze-title';
+      title.textContent = 'Écran figé';
+      const description = document.createElement('p');
+      description.textContent = 'Une anomalie bloque le terminal. Choisissez une sortie.';
+      const actions = document.createElement('div');
+      actions.className = 'matrix-freeze-actions';
+      const quitLeft = document.createElement('button');
+      quitLeft.type = 'button';
+      quitLeft.textContent = 'Quitter';
+      const resume = document.createElement('button');
+      resume.type = 'button';
+      resume.className = 'matrix-hidden-resume';
+      resume.setAttribute('aria-label', 'Continuer');
+      resume.title = 'Continuer';
+      const quitRight = document.createElement('button');
+      quitRight.type = 'button';
+      quitRight.textContent = 'Quitter';
+      actions.append(quitLeft, resume, quitRight);
+      card.append(title, description, actions);
+      freeze.append(card);
+      document.body.append(freeze);
+      const quitMatrix = () => {
+        matrixCode = '';
+        layer.remove();
+        freeze.remove();
+        output.textContent = 'Terminal quitté.';
+      };
+      quitLeft.addEventListener('click', quitMatrix);
+      quitRight.addEventListener('click', quitMatrix);
+      resume.addEventListener('click', () => {
+        freeze.remove();
+        layer.classList.remove('matrix-frozen');
+        highlightedColumn.classList.remove('matrix-pending');
+        window.setTimeout(() => layer.remove(), 4500);
+      });
+      }, 4700);
+      window.setTimeout(() => {
+        if (layer.isConnected) layer.remove();
+        if (freeze?.isConnected) freeze.remove();
+      }, 60000);
+    }
+
+    const releaseNotes = {
+      fr: ['Menu joueur avec Aperçu, Historique, Succès et Nouveautés.', 'Journal PATCH LOG fixe en bas à gauche, réductible et consultable.', 'Défi chrono réglable sur 15, 30 ou 60 secondes, avec pause.', 'Mode surprise : difficulté et durée tirées au hasard.', 'Défi quotidien déterministe, avec un objectif et un succès dédié.', 'Raccourcis clavier : ↑, ↓ et C pendant une partie.', 'Historique des 12 dernières parties, difficulté et résultat inclus.', 'Stats persistantes : victoires, moyenne, record, série et meilleur chrono.', 'Sept succès à débloquer au fil des parties.', 'Jauge animée pour suivre la zone encore explorée.', 'Réinitialisation des statistiques et de l’historique depuis le menu.'],
+      en: ['Player hub with Overview, History, Achievements, and What’s New.', 'Fixed PATCH LOG in the lower-left corner, collapsible and scrollable.', 'Time challenge adjustable to 15, 30, or 60 seconds, with pause.', 'Surprise mode picks a random difficulty and time limit.', 'Deterministic daily challenge with its own goal and achievement.', 'Keyboard shortcuts: ↑, ↓, and C while playing.', 'History of the last 12 games, including difficulty and result.', 'Persistent stats: wins, average, record, streak, and best time.', 'Seven achievements to unlock as you play.', 'Animated meter shows the remaining search range.', 'Reset stats and game history from the menu.'],
+      es: ['Menú con Resumen, Historial, Logros y Novedades.', 'PATCH LOG fijo abajo a la izquierda, plegable y desplazable.', 'Desafío cronometrado de 15, 30 o 60 segundos, con pausa.', 'El modo sorpresa elige al azar la dificultad y la duración.', 'Desafío diario determinista con objetivo y logro propios.', 'Atajos de teclado: ↑, ↓ y C durante la partida.', 'Historial de las últimas 12 partidas, con dificultad y resultado.', 'Estadísticas guardadas: victorias, media, récord, racha y mejor tiempo.', 'Siete logros para desbloquear mientras juegas.', 'Barra animada para seguir el rango de búsqueda.', 'Reinicia las estadísticas y el historial desde el menú.']
+    };
+    const achievementDefinitions = [
+      { id: 'first-win', test: data => data.wins >= 1 },
+      { id: 'five-wins', test: data => data.wins >= 5 },
+      { id: 'quick-win', test: (data, record) => record.won && record.attempts <= 4 },
+      { id: 'three-streak', test: data => data.streak >= 3 },
+      { id: 'all-levels', test: data => [1, 2, 3].every(level => data.levelsWon.includes(level)) },
+      { id: 'speed-win', test: (data, record) => record.won && record.timed },
+      { id: 'daily-win', test: data => data.dailyWins >= 1 }
+    ];
+    const achievementTranslations = {
+      fr: { 'first-win': ['Premier pas', 'Remporte ta première partie.'], 'five-wins': ['Habitué du jeu', 'Remporte 5 parties.'], 'quick-win': ['Efficacité', 'Trouve le nombre en 4 essais ou moins.'], 'three-streak': ['En série', 'Enchaîne 3 victoires.'], 'all-levels': ['Tous les terrains', 'Gagne une partie dans chaque niveau.'], 'speed-win': ['Contre la montre', 'Gagne une partie en mode chrono.'], 'daily-win': ['Rendez-vous quotidien', 'Réussis un défi du jour.'] },
+      en: { 'first-win': ['First steps', 'Win your first game.'], 'five-wins': ['Regular player', 'Win 5 games.'], 'quick-win': ['Efficient', 'Find the number in 4 guesses or fewer.'], 'three-streak': ['On a roll', 'Win 3 games in a row.'], 'all-levels': ['All the grounds', 'Win once at every difficulty.'], 'speed-win': ['Against the clock', 'Win a timed game.'], 'daily-win': ['Daily regular', 'Complete a daily challenge.'] },
+      es: { 'first-win': ['Primer paso', 'Gana tu primera partida.'], 'five-wins': ['Habitual', 'Gana 5 partidas.'], 'quick-win': ['Eficaz', 'Adivina en 4 intentos o menos.'], 'three-streak': ['En racha', 'Gana 3 partidas seguidas.'], 'all-levels': ['Todos los niveles', 'Gana una vez en cada dificultad.'], 'speed-win': ['Contra reloj', 'Gana una partida cronometrada.'], 'daily-win': ['Cita diaria', 'Completa un desafío diario.'] }
+    };
+    const menuTranslations = {
+      fr: { title: 'Menu du jeu', close: 'Fermer', overview: 'Aperçu', history: 'Historique', achievements: 'Succès', updates: 'Nouveautés', games: 'Parties jouées', average: 'Moyenne d’essais', best: 'Record d’essais', streak: 'Meilleure série', wins: 'Victoires', bestTime: 'Meilleur chrono', dailyWins: 'Défis quotidiens réussis', dailyTag: 'défi du jour', last: 'Dernière partie', noGames: 'Aucune partie jouée pour l’instant.', historyTitle: '12 dernières parties', achievementTitle: 'Succès à débloquer', updatesTitle: 'Tout ce qui vient d’arriver', noHistory: 'Lance une partie pour commencer ton historique.', win: 'Victoire', loss: 'Partie non terminée', timed: 'chrono', regular: 'classique', attemptUnit: 'essais', none: '—', timerMode: 'Activer le défi chrono', timerLabel: 'Durée du défi', surprise: 'Mode surprise ⚡', dailyTitle: 'Défi du jour', dailyStart: 'Jouer le défi', dailyReplay: 'Rejouer le défi', dailyDone: 'Défi du jour accompli !', dailyGoal: 'Objectif', resetStats: 'Réinitialiser statistiques et historique', resetConfirm: 'Effacer toutes les statistiques, les succès et l’historique des parties ?', resetDone: 'Statistiques et historique réinitialisés.', rangeLabel: 'Zone de recherche', timerWord: 'CHRONO', keys: 'Raccourcis : ↑ Plus · ↓ Moins · C Correct' },
+      en: { title: 'Game menu', close: 'Close', overview: 'Overview', history: 'History', achievements: 'Achievements', updates: 'What’s new', games: 'Games played', average: 'Average attempts', best: 'Best attempts', streak: 'Best streak', wins: 'Wins', bestTime: 'Best time', dailyWins: 'Daily challenges won', dailyTag: 'daily challenge', last: 'Last game', noGames: 'No games played yet.', historyTitle: 'Last 12 games', achievementTitle: 'Achievements', updatesTitle: 'Recent changes', noHistory: 'Play a game to start your history.', win: 'Win', loss: 'Unfinished', timed: 'timed', regular: 'classic', attemptUnit: 'guesses', none: '—', timerMode: 'Enable time challenge', timerLabel: 'Challenge duration', surprise: 'Surprise mode ⚡', dailyTitle: 'Daily challenge', dailyStart: 'Play challenge', dailyReplay: 'Replay challenge', dailyDone: 'Daily challenge complete!', dailyGoal: 'Goal', resetStats: 'Reset statistics and history', resetConfirm: 'Clear all stats, achievements, and game history?', resetDone: 'Stats and history reset.', rangeLabel: 'Search range', timerWord: 'TIMER', keys: 'Keys: ↑ Higher · ↓ Lower · C Correct' },
+      es: { title: 'Menú del juego', close: 'Cerrar', overview: 'Resumen', history: 'Historial', achievements: 'Logros', updates: 'Novedades', games: 'Partidas jugadas', average: 'Intentos de media', best: 'Mejor marca', streak: 'Mejor racha', wins: 'Victorias', bestTime: 'Mejor tiempo', dailyWins: 'Desafíos diarios ganados', dailyTag: 'desafío diario', last: 'Última partida', noGames: 'Todavía no has jugado.', historyTitle: 'Últimas 12 partidas', achievementTitle: 'Logros', updatesTitle: 'Cambios recientes', noHistory: 'Juega una partida para empezar tu historial.', win: 'Victoria', loss: 'Incompleta', timed: 'crono', regular: 'clásica', attemptUnit: 'intentos', none: '—', timerMode: 'Activar desafío cronometrado', timerLabel: 'Duración del desafío', surprise: 'Modo sorpresa ⚡', dailyTitle: 'Desafío diario', dailyStart: 'Jugar desafío', dailyReplay: 'Repetir desafío', dailyDone: '¡Desafío diario completado!', dailyGoal: 'Objetivo', resetStats: 'Reiniciar estadísticas e historial', resetConfirm: '¿Borrar todas las estadísticas, logros e historial?', resetDone: 'Estadísticas e historial reiniciados.', rangeLabel: 'Zona de búsqueda', timerWord: 'CRONO', keys: 'Teclas: ↑ Más · ↓ Menos · C Correcto' }
+    };
+    const changeLogToggle = document.querySelector('#change-log-toggle');
+
+    function loadPlayerData() {
+      const blank = { games: 0, wins: 0, totalWinningAttempts: 0, bestAttempts: null, streak: 0, bestStreak: 0, bestTime: null, achievements: [], levelsWon: [], dailyWins: 0, dailyCompletedDate: '', history: [] };
+      try {
+        const saved = JSON.parse(localStorage.getItem(playerDataKey) || '{}');
+        return {
+          ...blank,
+          ...saved,
+          games: Number.isFinite(saved.games) ? saved.games : 0,
+          wins: Number.isFinite(saved.wins) ? saved.wins : 0,
+          totalWinningAttempts: Number.isFinite(saved.totalWinningAttempts) ? saved.totalWinningAttempts : 0,
+          achievements: Array.isArray(saved.achievements) ? saved.achievements : [],
+          levelsWon: Array.isArray(saved.levelsWon) ? saved.levelsWon.filter(level => [1, 2, 3].includes(level)) : [],
+          dailyWins: Number.isFinite(saved.dailyWins) ? saved.dailyWins : 0,
+          dailyCompletedDate: typeof saved.dailyCompletedDate === 'string' ? saved.dailyCompletedDate : '',
+          history: Array.isArray(saved.history) ? saved.history.slice(0, 12) : []
+        };
+      } catch { return blank; }
+    }
+    function savePlayerData() {
+      try { localStorage.setItem(playerDataKey, JSON.stringify(playerData)); } catch {}
+    }
+    function getDailyChallenge() {
+      const now = new Date();
+      const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const seed = Number(date.replaceAll('-', ''));
+      const difficulty = seed % 3 + 1;
+      const duration = seed % 2 === 0 ? 30 : 60;
+      const target = { 1: 15, 2: 11, 3: 8 }[difficulty];
+      return { date, difficulty, duration, target };
+    }
+    function stopRoundTimer() {
+      if (timerInterval !== null) window.clearInterval(timerInterval);
+      timerInterval = null;
+    }
+    function showToast(text) {
+      const toast = document.querySelector('#menu-toast');
+      toast.textContent = text;
+      toast.classList.remove('hidden');
+      window.clearTimeout(showToast.timeout);
+      showToast.timeout = window.setTimeout(() => toast.classList.add('hidden'), 2800);
+    }
+    function formatClock(seconds) {
+      return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+    }
+    function checkAchievements(record) {
+      const unlockedNow = [];
+      achievementDefinitions.forEach(definition => {
+        if (!playerData.achievements.includes(definition.id) && definition.test(playerData, record)) {
+          playerData.achievements.push(definition.id);
+          unlockedNow.push(achievementTranslations[preferences.language][definition.id][0]);
+        }
+      });
+      return unlockedNow;
+    }
+    function recordFinishedGame(won, outcome = '') {
+      if (roundRecorded) return;
+      roundRecorded = true;
+      stopRoundTimer();
+      const duration = timedMode ? Math.max(1, timerDuration - timerRemaining) : roundStartedAt ? Math.max(1, Math.floor((Date.now() - roundStartedAt) / 1000)) : 0;
+      const dailySuccess = Boolean(won && dailyMode && currentDailyChallenge && attempts <= currentDailyChallenge.target && playerData.dailyCompletedDate !== currentDailyChallenge.date);
+      const record = { date: new Date().toISOString(), difficulty, attempts, won, timed: timedMode, duration, outcome, daily: dailyMode, dailyDate: currentDailyChallenge?.date || '', dailySuccess };
+      playerData.games++;
+      if (won) {
+        playerData.wins++;
+        playerData.totalWinningAttempts += attempts;
+        playerData.bestAttempts = playerData.bestAttempts === null ? attempts : Math.min(playerData.bestAttempts, attempts);
+        playerData.streak++;
+        playerData.bestStreak = Math.max(playerData.bestStreak, playerData.streak);
+        if (timedMode) playerData.bestTime = playerData.bestTime === null ? duration : Math.min(playerData.bestTime, duration);
+        playerData.levelsWon = [...new Set([...playerData.levelsWon, difficulty])];
+      } else playerData.streak = 0;
+      if (dailySuccess) {
+        playerData.dailyWins++;
+        playerData.dailyCompletedDate = currentDailyChallenge.date;
+      }
+      playerData.history.unshift(record);
+      playerData.history = playerData.history.slice(0, 12);
+      const unlocked = checkAchievements(record);
+      if (dailySuccess || unlocked.length) {
+        const parts = [];
+        if (dailySuccess) parts.push(menuTranslations[preferences.language].dailyDone);
+        if (unlocked.length) parts.push(`Succès · ${unlocked.join(' / ')}`);
+        showToast(parts.join(' — '));
+      }
+      savePlayerData();
+      renderGameMenu();
+    }
+    function startRoundTimer(reset = true) {
+      stopRoundTimer();
+      if (reset) timerRemaining = timerDuration;
+      document.querySelector('#timer-value').textContent = formatClock(timerRemaining);
+      document.querySelector('#timer-badge').classList.remove('urgent');
+      timerInterval = window.setInterval(() => {
+        timerRemaining--;
+        document.querySelector('#timer-value').textContent = formatClock(timerRemaining);
+        document.querySelector('#timer-badge').classList.toggle('urgent', timerRemaining <= 8);
+        if (timerRemaining <= 0) {
+          stopRoundTimer();
+          roundResult = 'timeout';
+          message.textContent = tr('timeout');
+          recordFinishedGame(false, 'timeout');
+          finish();
+        }
+      }, 1000);
+    }
+    function showMenuTab(tabName) {
+      document.querySelectorAll('[data-menu-tab]').forEach(tab => tab.setAttribute('aria-selected', String(tab.dataset.menuTab === tabName)));
+      document.querySelectorAll('[data-menu-view]').forEach(view => view.classList.toggle('hidden', view.dataset.menuView !== tabName));
+    }
+    function renderGameMenu() {
+      const labels = menuTranslations[preferences.language];
+      document.querySelector('#game-menu-title').textContent = labels.title;
+      document.querySelector('#game-menu-close').textContent = labels.close;
+      document.querySelector('#menu-reset-stats').textContent = labels.resetStats;
+      document.querySelectorAll('[data-menu-tab]').forEach(tab => { tab.textContent = labels[tab.dataset.menuTab]; });
+      const statLabels = document.querySelectorAll('.menu-stat-card span');
+      [labels.games, labels.average, labels.best, labels.streak, labels.wins, labels.bestTime, labels.dailyWins].forEach((label, index) => { statLabels[index].textContent = label; });
+      document.querySelector('#menu-games-played').textContent = playerData.games;
+      document.querySelector('#menu-wins').textContent = playerData.wins;
+      document.querySelector('#menu-average-attempts').textContent = playerData.wins ? (playerData.totalWinningAttempts / playerData.wins).toLocaleString(preferences.language, { maximumFractionDigits: 1 }) : labels.none;
+      document.querySelector('#menu-best-attempts').textContent = playerData.bestAttempts ?? labels.none;
+      document.querySelector('#menu-best-streak').textContent = playerData.bestStreak;
+      document.querySelector('#menu-best-time').textContent = playerData.bestTime === null ? labels.none : `${playerData.bestTime}s`;
+      document.querySelector('#menu-daily-wins').textContent = playerData.dailyWins;
+      const daily = getDailyChallenge();
+      const dailyLevelName = translations[preferences.language][['', 'easy', 'medium', 'impossible'][daily.difficulty]];
+      const dailyDone = playerData.dailyCompletedDate === daily.date;
+      document.querySelector('#menu-daily-title').textContent = labels.dailyTitle;
+      document.querySelector('#menu-daily-description').textContent = `${dailyLevelName} · ${daily.duration}s · ${labels.dailyGoal} : ${daily.target} ${labels.attemptUnit} max · ${dailyDone ? labels.dailyDone : daily.date}`;
+      document.querySelector('#menu-daily-start').textContent = dailyDone ? labels.dailyReplay : labels.dailyStart;
+      document.querySelector('#menu-daily-start').disabled = !game.classList.contains('hidden');
+      const lastGame = playerData.history[0];
+      const lastLevel = lastGame ? translations[preferences.language][['', 'easy', 'medium', 'impossible'][lastGame.difficulty]] || '—' : '';
+      document.querySelector('#menu-last-game').textContent = lastGame
+        ? `${lastGame.won ? labels.win : labels.loss} · ${lastGame.attempts} · ${lastLevel} · ${new Date(lastGame.date).toLocaleString(preferences.language)}`
+        : labels.noGames;
+      const historyList = document.querySelector('#menu-history-list');
+      historyList.replaceChildren();
+      if (!playerData.history.length) {
+        const empty = document.createElement('li'); empty.textContent = labels.noHistory; historyList.append(empty);
+      }
+      playerData.history.forEach(item => {
+        const row = document.createElement('li');
+        const levelName = translations[preferences.language][['', 'easy', 'medium', 'impossible'][item.difficulty]] || '—';
+        const date = new Date(item.date).toLocaleString(preferences.language, { dateStyle: 'short', timeStyle: 'short' });
+        row.textContent = `${date} · ${levelName} · ${item.won ? labels.win : labels.loss} · ${item.attempts} ${labels.attemptUnit} · ${item.timed ? labels.timed : labels.regular}${item.daily ? ` · ${labels.dailyTag}` : ''}`;
+        historyList.append(row);
+      });
+      const achievementList = document.querySelector('#menu-achievement-list');
+      achievementList.replaceChildren();
+      achievementDefinitions.forEach(definition => {
+        const row = document.createElement('li');
+        const unlocked = playerData.achievements.includes(definition.id);
+        row.classList.toggle('unlocked', unlocked);
+        const [title, details] = achievementTranslations[preferences.language][definition.id];
+        const name = document.createElement('strong'); name.textContent = `${unlocked ? '✓' : '◇'} ${title}`;
+        const description = document.createElement('div'); description.textContent = details;
+        row.append(name, description); achievementList.append(row);
+      });
+      const updatesList = document.querySelector('#menu-updates-list');
+      updatesList.replaceChildren();
+      releaseNotes[preferences.language].forEach(note => { const row = document.createElement('li'); row.textContent = note; updatesList.append(row); });
+      const logList = document.querySelector('#change-log-list');
+      logList.replaceChildren();
+      releaseNotes[preferences.language].forEach(note => { const entry = document.createElement('li'); entry.textContent = note; logList.append(entry); });
+      document.querySelector('[data-menu-view="history"] .menu-section-title').textContent = labels.historyTitle;
+      document.querySelector('[data-menu-view="achievements"] .menu-section-title').textContent = labels.achievementTitle;
+      document.querySelector('[data-menu-view="updates"] .menu-section-title').textContent = labels.updatesTitle;
+      document.querySelector('#menu-last-game').previousElementSibling.textContent = labels.last;
+    }
+    function openGameMenu() {
+      const menu = document.querySelector('#game-menu');
+      const backdrop = document.querySelector('#game-menu-backdrop');
+      let firstOpen = true;
+      try { firstOpen = !localStorage.getItem(menuSeenKey); } catch {}
+      menu.classList.remove('hidden');
+      backdrop.classList.remove('hidden');
+      document.querySelector('#game-menu-button').setAttribute('aria-expanded', 'true');
+      renderGameMenu();
+      showMenuTab(firstOpen ? 'updates' : 'overview');
+      if (firstOpen) { try { localStorage.setItem(menuSeenKey, '1'); } catch {} }
+      if (timerInterval !== null) stopRoundTimer();
+      document.querySelector('#game-menu-close').focus();
+    }
+    function startDailyChallenge() {
+      if (!game.classList.contains('hidden')) return;
+      currentDailyChallenge = getDailyChallenge();
+      launchMode = 'daily';
+      document.querySelector(`input[name="difficulty"][value="${currentDailyChallenge.difficulty}"]`).checked = true;
+      document.querySelector('#timed-mode').checked = true;
+      document.querySelector('#timer-duration').disabled = false;
+      document.querySelector('#timer-duration').value = String(currentDailyChallenge.duration);
+      preferences.timerDuration = currentDailyChallenge.duration;
+      savePreferences();
+      if (!document.querySelector('#game-menu').classList.contains('hidden')) closeGameMenu();
+      document.querySelector('#start').click();
+    }
+    function closeGameMenu() {
+      document.querySelector('#game-menu').classList.add('hidden');
+      document.querySelector('#game-menu-backdrop').classList.add('hidden');
+      document.querySelector('#game-menu-button').setAttribute('aria-expanded', 'false');
+      if (timedMode && roundResult === 'searching' && timerInterval === null && timerRemaining > 0) startRoundTimer(false);
+      document.querySelector('#game-menu-button').focus();
+    }
+
+    function loadHistory() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(historyKey) || '{}');
+        return { 1: Array.isArray(saved[1]) ? saved[1].filter(Number.isFinite).slice(-5) : [],
+                 2: Array.isArray(saved[2]) ? saved[2].filter(Number.isFinite).slice(-5) : [],
+                 3: Array.isArray(saved[3]) ? saved[3].filter(Number.isFinite).slice(-5) : [] };
+      } catch {
+        return { 1: [], 2: [], 3: [] };
+      }
+    }
+    function updateDifficultyLabels() {
+      [1, 2, 3].forEach(level => {
+        const lastFive = history[level];
+        const average = settings.averages[level] !== ''
+          ? settings.averages[level]
+          : lastFive.length === 5
+          ? (lastFive.reduce((sum, count) => sum + count, 0) / 5).toLocaleString(preferences.language, { maximumFractionDigits: 1 })
+          : '---';
+        document.querySelector(`#average-${level}`).textContent = `'${average}'`;
+      });
+    }
+    function updateRangeMeter() {
+      const total = { 1: 10000, 2: 1000, 3: 100 }[difficulty] || 10000;
+      const remaining = Math.max(0, max - min + 1);
+      const percent = Math.max(1, Math.min(100, remaining / total * 100));
+      document.querySelector('#range-meter-fill').style.width = `${percent}%`;
+      document.querySelector('#range-meter-value').textContent = `${Math.round(percent)} %`;
+    }
+    function saveCompletedGame() {
+      history[difficulty].push(attempts);
+      history[difficulty] = history[difficulty].slice(-5);
+      try { localStorage.setItem(historyKey, JSON.stringify(history)); } catch {}
+      updateDifficultyLabels();
+    }
+    applySettings();
+    updatePreferenceControls();
+
+    document.querySelector('#settings-gear').addEventListener('click', openSettings);
+    document.querySelector('#settings-close').addEventListener('click', closeSettings);
+    document.querySelector('#settings-backdrop').addEventListener('click', closeSettings);
+    document.querySelector('#code-dialog-close').addEventListener('click', closeCodeDialog);
+    document.querySelector('#code-backdrop').addEventListener('click', closeCodeDialog);
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !document.querySelector('#settings-dialog').classList.contains('hidden')) closeSettings();
+      if (event.key === 'Escape' && !document.querySelector('#code-dialog').classList.contains('hidden')) closeCodeDialog();
+      if (event.key === 'Escape' && !document.querySelector('#game-menu').classList.contains('hidden')) closeGameMenu();
+      if (event.repeat || game.classList.contains('hidden') || roundResult !== 'searching' || document.body.classList.contains('admin-open')) return;
+      if (['#settings-dialog', '#code-dialog', '#game-menu'].some(selector => !document.querySelector(selector).classList.contains('hidden')) || document.querySelector('.troll-screen, .matrix-layer, .matrix-freeze')) return;
+      if (event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable="true"]')) return;
+      const shortcut = { ArrowUp: '#higher', ArrowDown: '#lower', c: '#correct' }[event.key] || { arrowup: '#higher', arrowdown: '#lower', c: '#correct' }[event.key.toLowerCase()];
+      if (shortcut) { event.preventDefault(); document.querySelector(shortcut).click(); }
+    });
+    document.querySelector('#game-menu-button').addEventListener('click', openGameMenu);
+    document.querySelector('#daily-start').addEventListener('click', startDailyChallenge);
+    document.querySelector('#menu-daily-start').addEventListener('click', startDailyChallenge);
+    document.querySelector('#game-menu-close').addEventListener('click', closeGameMenu);
+    document.querySelector('#game-menu-backdrop').addEventListener('click', closeGameMenu);
+    document.querySelectorAll('[data-menu-tab]').forEach(tab => tab.addEventListener('click', () => showMenuTab(tab.dataset.menuTab)));
+    document.querySelector('#change-log-toggle').addEventListener('click', event => {
+      const log = document.querySelector('#change-log');
+      const collapsed = log.classList.toggle('collapsed');
+      event.currentTarget.textContent = collapsed ? '+' : '−';
+      event.currentTarget.setAttribute('aria-label', collapsed ? 'Développer le journal' : 'Réduire le journal');
+    });
+    document.querySelector('#timed-mode').addEventListener('change', event => {
+      document.querySelector('#timer-duration').disabled = !event.currentTarget.checked;
+    });
+    document.querySelector('#timer-duration').addEventListener('change', event => {
+      preferences.timerDuration = Number(event.currentTarget.value);
+      savePreferences();
+    });
+    document.querySelector('#menu-reset-stats').addEventListener('click', () => {
+      const labels = menuTranslations[preferences.language];
+      if (!window.confirm(labels.resetConfirm)) return;
+      playerData = { games: 0, wins: 0, totalWinningAttempts: 0, bestAttempts: null, streak: 0, bestStreak: 0, bestTime: null, achievements: [], levelsWon: [], dailyWins: 0, dailyCompletedDate: '', history: [] };
+      history = { 1: [], 2: [], 3: [] };
+      try { localStorage.removeItem(playerDataKey); localStorage.removeItem(historyKey); } catch {}
+      updateDifficultyLabels();
+      renderGameMenu();
+      showToast(labels.resetDone);
+    });
+    document.querySelector('#sfx-enabled').addEventListener('change', event => {
+      preferences.sfx = event.currentTarget.checked;
+      persistPreferences();
+      if (preferences.sfx) playSfx();
+    });
+    document.querySelector('#sfx-volume').addEventListener('input', event => {
+      preferences.sfxVolume = Number(event.currentTarget.value);
+      persistPreferences();
+    });
+    document.querySelector('#music-enabled').addEventListener('change', event => {
+      preferences.music = event.currentTarget.checked;
+      persistPreferences();
+      if (preferences.music) startMusic(); else stopMusic();
+    });
+    document.querySelector('#music-volume').addEventListener('input', event => {
+      preferences.musicVolume = Number(event.currentTarget.value);
+      persistPreferences();
+    });
+    document.querySelectorAll('[data-language]').forEach(button => button.addEventListener('click', () => {
+      preferences.language = button.dataset.language;
+      persistPreferences();
+    }));
+    document.querySelectorAll('[data-theme-choice]').forEach(button => button.addEventListener('click', () => {
+      preferences.theme = button.dataset.themeChoice;
+      persistPreferences();
+    }));
+    document.querySelector('#high-contrast').addEventListener('change', event => {
+      preferences.highContrast = event.currentTarget.checked;
+      persistPreferences();
+    });
+    document.querySelector('#reduce-motion').addEventListener('change', event => {
+      preferences.reduceMotion = event.currentTarget.checked;
+      persistPreferences();
+    });
+    document.querySelector('#visual-effects').addEventListener('change', event => {
+      preferences.visualEffects = event.currentTarget.checked;
+      persistPreferences();
+    });
+
+    let adminUnlocked = false;
+    function setAdminPanelOpen(isOpen) {
+      document.querySelector('#admin-panel').classList.toggle('hidden', !isOpen);
+      document.querySelector('#admin-toggle').setAttribute('aria-expanded', String(isOpen));
+      document.querySelector('#start').classList.toggle('hidden', isOpen);
+      document.querySelector('#surprise-mode').classList.toggle('hidden', isOpen);
+      document.querySelector('#daily-start').classList.toggle('hidden', isOpen);
+      document.querySelector('#admin-unlock').classList.toggle('hidden', isOpen);
+      document.body.classList.toggle('admin-open', isOpen);
+    }
+    document.querySelector('#admin-unlock').addEventListener('submit', event => {
+      event.preventDefault();
+      const phrase = document.querySelector('#admin-phrase').value.trim();
+      const command = phrase.split('\\.').join('.');
+      const error = document.querySelector('#unlock-error');
+      if (command === 'clear') {
+        document.querySelector('#admin-phrase').value = '';
+        error.classList.remove('success');
+        error.textContent = '';
+      } else if (command === 'show.matrix()') {
+        matrixCode = matrixCode || createMatrixCode();
+        document.querySelector('#admin-phrase').value = '';
+        error.classList.add('success');
+        error.textContent = `Code : ${matrixCode}`;
+      } else if (command === 'show.troll()') {
+        document.querySelector('#admin-phrase').value = '';
+        error.classList.add('success');
+        error.textContent = `Code : ${trollCode}`;
+      } else if (command === 'show.AP()') {
+        adminUnlocked = true;
+        document.querySelector('#admin-toggle').classList.remove('hidden');
+        document.querySelector('#admin-phrase').value = '';
+        error.classList.remove('success');
+        error.textContent = '';
+      } else if (command === 'hide.AP()') {
+        adminUnlocked = false;
+        setAdminPanelOpen(false);
+        document.querySelector('#admin-toggle').classList.add('hidden');
+        document.querySelector('#admin-phrase').value = '';
+        error.classList.remove('success');
+        error.textContent = 'Panneau AP masqué.';
+      } else if (command === 'troll()') {
+        document.querySelector('#admin-phrase').value = '';
+        error.classList.remove('success');
+        error.textContent = '';
+        runTroll();
+      } else if (command.toLowerCase() === 'help()') {
+        document.querySelector('#admin-phrase').value = '';
+        error.classList.remove('success');
+        error.textContent = '';
+        const responses = terminalResponses[preferences.language];
+        openCodeDialog(responses.helpTitle, responses.help);
+      } else if (command.toLowerCase() === 'fortune()') {
+        document.querySelector('#admin-phrase').value = '';
+        error.classList.remove('success');
+        const fortunes = terminalResponses[preferences.language].fortunes;
+        error.textContent = fortunes[Math.floor(Math.random() * fortunes.length)];
+      } else if (command.toLowerCase() === 'sudo()') {
+        document.querySelector('#admin-phrase').value = '';
+        error.classList.remove('success');
+        error.textContent = terminalResponses[preferences.language].sudo;
+      } else if (command.toLowerCase() === 'matrix()') {
+        document.querySelector('#admin-phrase').value = '';
+        runMatrix();
+      } else if (trollWasPlayed && command.toUpperCase() === trollCode) {
+        document.querySelector('#admin-phrase').value = '';
+        error.classList.remove('success');
+        error.textContent = '';
+        openCodeDialog();
+      } else if (matrixCode && command.toUpperCase() === matrixCode) {
+        document.querySelector('#admin-phrase').value = '';
+        error.classList.remove('success');
+        error.textContent = '';
+        matrixCode = '';
+        const t = translations[preferences.language];
+        openCodeDialog(t.matrixWinTitle, t.matrixWinText);
+      } else {
+        error.classList.remove('success');
+        error.textContent = 'Phrase non reconnue.';
+      }
+    });
+    document.querySelector('#admin-phrase').addEventListener('keydown', event => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        document.querySelector('#admin-unlock').requestSubmit();
+      }
+    });
+    document.querySelector('#admin-toggle').addEventListener('click', event => {
+      const panel = document.querySelector('#admin-panel');
+      setAdminPanelOpen(panel.classList.contains('hidden'));
+    });
+    document.querySelector('#admin-close').addEventListener('click', () => setAdminPanelOpen(false));
+    document.querySelector('#admin-save').addEventListener('click', () => {
+      settings = {
+        title: document.querySelector('#admin-title').value.trim() || defaultSettings.title,
+        intro: document.querySelector('#admin-intro').value.trim() || defaultSettings.intro,
+        prompt: document.querySelector('#admin-prompt').value.trim() || defaultSettings.prompt,
+        levels: {
+          1: document.querySelector('#admin-level-1').value.trim() || defaultSettings.levels[1],
+          2: document.querySelector('#admin-level-2').value.trim() || defaultSettings.levels[2],
+          3: document.querySelector('#admin-level-3').value.trim() || defaultSettings.levels[3]
+        },
+        start: document.querySelector('#admin-start').value.trim() || defaultSettings.start,
+        averages: {
+          1: document.querySelector('#admin-average-1').value.trim(),
+          2: document.querySelector('#admin-average-2').value.trim(),
+          3: document.querySelector('#admin-average-3').value.trim()
+        }
+      };
+      try { localStorage.setItem(settingsKey, JSON.stringify(settings)); } catch {}
+      applySettings();
+      document.querySelector('#admin-status').textContent = 'Modifications enregistrées sur cet appareil.';
+    });
+    document.querySelector('#admin-reset').addEventListener('click', () => {
+      settings = freshDefaultSettings();
+      try { localStorage.removeItem(settingsKey); } catch {}
+      applySettings();
+      document.querySelector('#admin-status').textContent = 'Textes rétablis et moyennes automatiques activées.';
+    });
+    document.querySelectorAll('[data-admin-command], [data-admin-code]').forEach(button => button.addEventListener('click', () => {
+      const phraseInput = document.querySelector('#admin-phrase');
+      let commandLabel = button.dataset.adminCommand;
+      if (button.dataset.adminCode === 'troll') {
+        trollWasPlayed = true;
+        phraseInput.value = trollCode;
+        commandLabel = 'TBLX';
+      } else if (button.dataset.adminCode === 'matrix') {
+        matrixCode = matrixCode || createMatrixCode();
+        phraseInput.value = matrixCode;
+        commandLabel = 'code Matrix';
+      } else {
+        phraseInput.value = button.dataset.adminCommand;
+      }
+      document.querySelector('#admin-unlock').requestSubmit();
+      const result = document.querySelector('#admin-command-result');
+      const terminalOutput = document.querySelector('#unlock-error').textContent;
+      if (commandLabel === 'clear') result.textContent = 'Terminal effacé.';
+      else if (commandLabel === 'troll()') result.textContent = 'Séquence troll lancée.';
+      else if (commandLabel === 'matrix()') result.textContent = 'Séquence Matrix lancée.';
+      else if (commandLabel === 'help()') result.textContent = 'Menu d’aide ouvert au premier plan.';
+      else if (commandLabel === 'show.AP()') result.textContent = 'Panneau AP affiché.';
+      else if (commandLabel === 'hide.AP()') document.querySelector('#unlock-error').textContent = 'Panneau AP masqué.';
+      else if (button.dataset.adminCode) result.textContent = `Résultat de ${commandLabel} : le code a été accepté.`;
+      else result.textContent = terminalOutput || `Commande ${commandLabel} exécutée.`;
+      if (commandLabel !== 'hide.AP()') result.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }));
+
+    function nextGuess() {
+      if (min > max) {
+        roundResult = 'inconsistent';
+        message.textContent = tr('inconsistent');
+        recordFinishedGame(false, 'inconsistent');
+        finish();
+        return;
+      }
+      updateRangeMeter();
+      current = Math.floor(Math.random() * (max - min + 1)) + min;
+      attempts++;
+      number.textContent = formatInteger(current);
+      animateGuess();
+      roundResult = 'searching';
+      message.textContent = `${tr('searching')} ${formatInteger(min)}–${formatInteger(max)}.`;
+    }
+    function finish() {
+      stopRoundTimer();
+      guessButtons.forEach(button => button.disabled = true);
+      restart.classList.remove('hidden');
+    }
+    document.querySelector('#start').addEventListener('click', () => {
+      const requestedMode = launchMode;
+      launchMode = 'normal';
+      dailyMode = requestedMode === 'daily';
+      if (!dailyMode) currentDailyChallenge = null;
+      difficulty = Number(document.querySelector('input[name="difficulty"]:checked').value);
+      min = 1; max = { 1: 10000, 2: 1000, 3: 100 }[difficulty];
+      attempts = 0;
+      roundRecorded = false;
+      roundResult = 'idle';
+      roundStartedAt = Date.now();
+      timedMode = dailyMode || document.querySelector('#timed-mode').checked;
+      timerDuration = dailyMode ? currentDailyChallenge.duration : Number(document.querySelector('#timer-duration').value) || 30;
+      document.querySelector('#timer-badge').classList.toggle('hidden', !timedMode);
+      document.querySelector('#timer-badge').classList.remove('urgent');
+      setup.classList.add('hidden');
+      game.classList.remove('hidden');
+      document.querySelector('#admin-unlock').classList.add('hidden');
+      document.querySelector('#admin-toggle').classList.add('hidden');
+      guessButtons.forEach(button => button.disabled = false);
+      restart.classList.add('hidden');
+      nextGuess();
+      if (timedMode) startRoundTimer();
+    });
+    document.querySelector('#surprise-mode').addEventListener('click', () => {
+      launchMode = 'surprise';
+      difficulty = Math.floor(Math.random() * 3) + 1;
+      document.querySelector(`input[name="difficulty"][value="${difficulty}"]`).checked = true;
+      document.querySelector('#timed-mode').checked = true;
+      document.querySelector('#timer-duration').disabled = false;
+      timerDuration = [15, 30, 60][Math.floor(Math.random() * 3)];
+      preferences.timerDuration = timerDuration;
+      savePreferences();
+      document.querySelector('#timer-duration').value = String(timerDuration);
+      document.querySelector('#start').click();
+      const t = translations[preferences.language];
+      const levelName = { 1: t.easy, 2: t.medium, 3: t.impossible }[difficulty];
+      showToast(`${menuTranslations[preferences.language].surprise} · ${levelName} · ${timerDuration}s`);
+    });
+    document.querySelector('#higher').addEventListener('click', () => {
+      playSfx('higher');
+      min = current + 1;
+      nextGuess();
+    });
+    document.querySelector('#lower').addEventListener('click', () => {
+      playSfx('lower');
+      max = current - 1;
+      nextGuess();
+    });
+    document.querySelector('#correct').addEventListener('click', () => {
+      playSfx('success');
+      saveCompletedGame();
+      roundResult = 'won';
+      message.textContent = tr('win');
+      recordFinishedGame(true, 'win');
+      celebrateWin();
+      finish();
+    });
+    restart.addEventListener('click', () => {
+      game.classList.add('hidden');
+      setup.classList.remove('hidden');
+      document.querySelector('#admin-unlock').classList.remove('hidden');
+      if (adminUnlocked) document.querySelector('#admin-toggle').classList.remove('hidden');
+    });
+    document.querySelector('#leave').addEventListener('click', () => {
+      if (roundResult === 'searching') recordFinishedGame(false, 'abandoned');
+      stopRoundTimer();
+      min = 1;
+      max = 100;
+      current = 0;
+      attempts = 0;
+      roundResult = 'idle';
+      game.classList.add('hidden');
+      setup.classList.remove('hidden');
+      guessButtons.forEach(button => button.disabled = false);
+      restart.classList.add('hidden');
+      document.querySelector('#timer-badge').classList.add('hidden');
+      timedMode = false;
+      document.querySelector('#admin-unlock').classList.remove('hidden');
+      if (adminUnlocked) document.querySelector('#admin-toggle').classList.remove('hidden');
+      message.textContent = tr('initial');
+    });
+    document.querySelectorAll('input[name="difficulty"]').forEach(radio => radio.addEventListener('change', applyLanguage));
+  </script>
+</body>
+</html>
